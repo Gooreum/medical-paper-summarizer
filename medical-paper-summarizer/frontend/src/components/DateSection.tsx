@@ -15,10 +15,10 @@ export default function DateSection({ date, count, children }: Props) {
   return (
     <section className="mb-3">
       <div className="flex items-center gap-1.5 px-1 mb-2">
-        <span className="text-[12px] font-medium text-gray-400">
+        <span className="text-[12px] font-medium text-gray-400 dark:text-gray-500">
           {formatDate(date)}
         </span>
-        <span className="text-[12px] text-gray-400">{count}편</span>
+        <span className="text-[12px] text-gray-400 dark:text-gray-500">{count}편</span>
       </div>
       {children}
     </section>

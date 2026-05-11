@@ -6,6 +6,7 @@ import Link from 'next/link';
 import TopicTabs from '@/src/components/TopicTabs';
 import DateSection from '@/src/components/DateSection';
 import PaperCard from '@/src/components/PaperCard';
+import ThemeToggle from '@/src/components/ThemeToggle';
 import { fetchPapers, fetchTopicCounts, fetchSourceCounts, type Paper } from '@/src/lib/api';
 
 const TOPICS = ['근비대', '해부학', '자세교정', '영양학', '탈모치료', '노화', '웨이트 트레이닝', '수면', '다이어트'];
@@ -40,14 +41,14 @@ function groupByDate(papers: Paper[]): Record<string, Paper[]> {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl p-4 animate-pulse bg-white">
+    <div className="rounded-2xl p-4 animate-pulse bg-white dark:bg-gray-800">
       <div className="flex gap-2 mb-2.5">
-        <div className="h-5 w-16 bg-gray-200 rounded-full" />
-        <div className="h-5 w-16 bg-gray-100 rounded-full" />
+        <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
+        <div className="h-5 w-16 bg-gray-100 dark:bg-gray-700 rounded-full" />
       </div>
-      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-      <div className="h-3 bg-gray-100 rounded w-full mb-1" />
-      <div className="h-3 bg-gray-100 rounded w-2/3" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+      <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-full mb-1" />
+      <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-2/3" />
     </div>
   );
 }
@@ -179,17 +180,18 @@ function HomeContent() {
     <main className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-[22px] font-bold text-gray-900 leading-tight">의학 논문 AI 요약</h1>
-          <p className="text-[13px] text-gray-500 mt-1">PubMed · bioRxiv 최신 논문을 매일 한국어로 요약합니다</p>
+          <h1 className="text-[22px] font-bold text-gray-900 dark:text-white leading-tight">의학 논문 AI 요약</h1>
+          <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-1">PubMed · bioRxiv 최신 논문을 매일 한국어로 요약합니다</p>
         </div>
         <div className="flex items-center gap-2 mt-1">
+          <ThemeToggle />
           <Link
             href="/bookmarks"
-            className="flex items-center gap-1 text-[12px] px-3 py-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors font-medium"
+            className="flex items-center gap-1 text-[12px] px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium"
           >
             ★ {bookmarks.size > 0 ? bookmarks.size : '저장'}
           </Link>
-          <a href="/admin" className="text-[12px] text-gray-400 hover:text-gray-600">
+          <a href="/admin" className="text-[12px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
             관리자
           </a>
         </div>
@@ -197,9 +199,9 @@ function HomeContent() {
 
       <TopicTabs topics={TOPICS} selected={selected} onChange={handleTopicChange} counts={topicCounts.counts} total={topicCounts.total} />
 
-      <div className="py-3 space-y-2.5 border-b border-gray-200 mb-4">
+      <div className="py-3 space-y-2.5 border-b border-gray-200 dark:border-gray-700 mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-medium text-gray-400 w-7 shrink-0">정렬</span>
+          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 w-7 shrink-0">정렬</span>
           <div className="flex gap-1.5">
             {SORT_OPTIONS.map(opt => (
               <button
@@ -208,7 +210,7 @@ function HomeContent() {
                 className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
                   sortBy === opt.value
                     ? 'bg-blue-500 text-white'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
+                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 {opt.label}
@@ -217,7 +219,7 @@ function HomeContent() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-medium text-gray-400 w-7 shrink-0">출처</span>
+          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 w-7 shrink-0">출처</span>
           <div className="flex gap-1.5">
             {SOURCE_OPTIONS.map(opt => {
               const count = opt.value !== '' ? (sourceCounts[opt.value] ?? 0) : 0;
@@ -228,13 +230,13 @@ function HomeContent() {
                   onClick={() => handleSourceChange(opt.value)}
                   className={`flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
                     isActive
-                      ? 'bg-gray-800 text-white'
-                      : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900'
+                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
                   {opt.label}
                   {count > 0 && (
-                    <span className={`text-[11px] font-semibold ${isActive ? 'text-gray-400' : 'text-gray-400'}`}>
+                    <span className={`text-[11px] font-semibold ${isActive ? 'text-gray-400 dark:text-gray-600' : 'text-gray-400 dark:text-gray-500'}`}>
                       {count}
                     </span>
                   )}
@@ -252,7 +254,7 @@ function HomeContent() {
           ))}
         </div>
       ) : papers.length === 0 ? (
-        <p className="text-gray-500 mt-8 text-center">수집된 논문이 없습니다.</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-8 text-center">수집된 논문이 없습니다.</p>
       ) : (
         <>
           {sortBy === 'crawled_date' ? (
@@ -281,7 +283,7 @@ function HomeContent() {
               <button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingMore ? '로딩 중...' : '더 보기'}
               </button>

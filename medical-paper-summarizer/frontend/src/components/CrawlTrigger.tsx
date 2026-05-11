@@ -87,15 +87,15 @@ export default function CrawlTrigger() {
     <div className="space-y-4">
       {/* 논문 채널 선택 */}
       <div>
-        <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">논문 채널</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium uppercase tracking-wide">논문 채널</p>
         <div className="flex flex-wrap gap-3">
           {SOURCE_OPTIONS.map(src => (
             <label
               key={src.id}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
                 selectedSources.includes(src.id)
-                  ? 'bg-indigo-50 border-indigo-400 text-indigo-700'
-                  : 'bg-white border-gray-300 text-gray-500 hover:border-indigo-300'
+                  ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-400 dark:border-indigo-600 text-indigo-700 dark:text-indigo-400'
+                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-indigo-300 dark:hover:border-indigo-500'
               }`}
             >
               <input
@@ -115,11 +115,11 @@ export default function CrawlTrigger() {
       {/* 토픽 선택 */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">토픽</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">토픽</p>
           <button
             onClick={() => setSelectedTopics(selectedTopics.length === ALL_TOPICS.length ? [] : ALL_TOPICS)}
             disabled={running}
-            className="text-xs text-blue-500 hover:text-blue-600 disabled:opacity-50"
+            className="text-xs text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 disabled:opacity-50"
           >
             {selectedTopics.length === ALL_TOPICS.length ? '전체 해제' : '전체 선택'}
           </button>
@@ -131,8 +131,8 @@ export default function CrawlTrigger() {
               onClick={() => toggleTopic(t)}
               className={`px-3 py-1 rounded-full text-sm border transition-colors ${
                 selectedTopics.includes(t)
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                  ? 'bg-blue-500 text-white border-blue-500'
+                  : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
               }`}
             >
               {t}
@@ -143,7 +143,7 @@ export default function CrawlTrigger() {
 
       {/* 요약 모델 선택 */}
       <div>
-        <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">요약 모델</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium uppercase tracking-wide">요약 모델</p>
         <div className="flex gap-4 flex-wrap">
           {CLAUDE_MODELS.map(m => (
             <label key={m.id} className="flex items-center gap-1.5 cursor-pointer">
@@ -156,7 +156,7 @@ export default function CrawlTrigger() {
                 disabled={running}
                 className="accent-indigo-600"
               />
-              <span className="text-sm text-gray-700">{m.label}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">{m.label}</span>
             </label>
           ))}
         </div>
@@ -164,7 +164,7 @@ export default function CrawlTrigger() {
 
       {/* 토픽당 논문 수 */}
       <div className="flex items-center gap-3">
-        <label className="text-sm text-gray-600">토픽당 논문 수</label>
+        <label className="text-sm text-gray-600 dark:text-gray-300">토픽당 논문 수</label>
         <input
           type="number"
           min={1}
@@ -172,9 +172,9 @@ export default function CrawlTrigger() {
           value={papersPerTopic}
           onChange={e => setPapersPerTopic(Math.max(1, Math.min(20, Number(e.target.value))))}
           disabled={running}
-          className="w-16 px-2 py-1.5 text-sm border border-gray-300 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
+          className="w-16 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         />
-        <span className="text-xs text-gray-400">최대 20</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">최대 20</span>
       </div>
 
       {/* 크롤링 버튼 */}
@@ -182,7 +182,7 @@ export default function CrawlTrigger() {
         <button
           onClick={handleCrawl}
           disabled={running || selectedTopics.length === 0 || selectedSources.length === 0}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {running && (
             <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -192,37 +192,37 @@ export default function CrawlTrigger() {
           )}
           지금 크롤링
         </button>
-        {done && <span className="text-sm text-green-600 font-medium">{done}</span>}
+        {done && <span className="text-sm text-green-600 dark:text-green-400 font-medium">{done}</span>}
       </div>
 
       {/* 로그 패널 */}
       {logs.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-1">
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">크롤링 로그</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">크롤링 로그</p>
             <button
               onClick={() => setAutoScroll(v => !v)}
               className={`text-xs px-2 py-1 rounded transition-colors ${
-                autoScroll ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                autoScroll ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
               }`}
             >
               자동스크롤 {autoScroll ? 'ON' : 'OFF'}
             </button>
           </div>
-        <div className="bg-gray-900 rounded-lg p-4 h-72 overflow-y-auto font-mono text-xs">
-          {logs.map((line, i) => (
-            <div key={i} className={`leading-5 ${
-              line.includes('완료 ✓') ? 'text-green-400' :
-              line.includes('스킵') ? 'text-yellow-400' :
-              line.includes('오류') ? 'text-red-400' :
-              line.includes('요약 중') ? 'text-blue-300' :
-              'text-gray-300'
-            }`}>
-              {line}
-            </div>
-          ))}
-          <div ref={logEndRef} />
-        </div>
+          <div className="bg-gray-900 rounded-lg p-4 h-72 overflow-y-auto font-mono text-xs">
+            {logs.map((line, i) => (
+              <div key={i} className={`leading-5 ${
+                line.includes('완료 ✓') ? 'text-green-400' :
+                line.includes('스킵') ? 'text-yellow-400' :
+                line.includes('오류') ? 'text-red-400' :
+                line.includes('요약 중') ? 'text-blue-300' :
+                'text-gray-300'
+              }`}>
+                {line}
+              </div>
+            ))}
+            <div ref={logEndRef} />
+          </div>
         </div>
       )}
     </div>

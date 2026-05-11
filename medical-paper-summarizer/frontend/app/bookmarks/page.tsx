@@ -7,14 +7,14 @@ import { fetchPapers, type Paper } from '@/src/lib/api';
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl p-5 animate-pulse bg-white shadow-card">
+    <div className="rounded-2xl p-5 animate-pulse bg-white dark:bg-gray-800 shadow-card">
       <div className="flex gap-2 mb-2">
-        <div className="h-5 w-16 bg-gray-200 rounded-full" />
-        <div className="h-5 w-16 bg-gray-100 rounded-full" />
+        <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
+        <div className="h-5 w-16 bg-gray-100 dark:bg-gray-700 rounded-full" />
       </div>
-      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-      <div className="h-3 bg-gray-100 rounded w-full mb-1" />
-      <div className="h-3 bg-gray-100 rounded w-2/3" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+      <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-full mb-1" />
+      <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-2/3" />
     </div>
   );
 }
@@ -54,7 +54,6 @@ export default function BookmarksPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // 북마크 해제 시 목록에서 즉시 제거
   useEffect(() => {
     setPapers(prev => prev.filter(p => bookmarks.has(p.id)));
   }, [bookmarks]);
@@ -62,14 +61,14 @@ export default function BookmarksPage() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center gap-3 mb-7">
-        <Link href="/" className="text-gray-400 hover:text-gray-600 text-sm">
+        <Link href="/" className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-sm">
           ← 목록
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           <span className="text-yellow-400 mr-1">★</span>북마크
         </h1>
         {bookmarks.size > 0 && (
-          <span className="text-sm text-gray-400">{bookmarks.size}편</span>
+          <span className="text-sm text-gray-400 dark:text-gray-500">{bookmarks.size}편</span>
         )}
       </div>
 
@@ -79,8 +78,8 @@ export default function BookmarksPage() {
         </div>
       ) : papers.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-gray-400 mb-4">북마크한 논문이 없습니다.</p>
-          <Link href="/" className="text-blue-500 hover:underline text-sm">
+          <p className="text-gray-400 dark:text-gray-500 mb-4">북마크한 논문이 없습니다.</p>
+          <Link href="/" className="text-blue-500 dark:text-blue-400 hover:underline text-sm">
             논문 목록으로 →
           </Link>
         </div>

@@ -11,7 +11,7 @@ type Props = {
 export default function TopicTabs({ topics, selected, onChange, counts = {}, total = 0 }: Props) {
   const all = ['전체', ...topics];
   return (
-    <div className="bg-gray-100 pb-1">
+    <div className="bg-gray-100 dark:bg-gray-900 pb-1">
       <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 scrollbar-hide">
         {all.map((topic) => {
           const isActive = selected === topic;
@@ -23,13 +23,13 @@ export default function TopicTabs({ topics, selected, onChange, counts = {}, tot
               className={`flex items-center gap-1 px-3.5 py-1.5 text-[13px] font-medium whitespace-nowrap rounded-full transition-all duration-150 shrink-0 ${
                 isActive
                   ? 'bg-blue-500 text-white'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
+                  : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
             >
               {topic}
               {count > 0 && (
                 <span className={`text-[11px] font-semibold ${
-                  isActive ? 'text-blue-200' : 'text-gray-400'
+                  isActive ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'
                 }`}>
                   {count}
                 </span>

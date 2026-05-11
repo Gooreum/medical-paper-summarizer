@@ -41,8 +41,8 @@ function BodyRenderer({ body }: { body: string }) {
 
           if (numberedMatch) {
             return (
-              <li key={i} className="flex gap-3 text-[15px] text-gray-700 leading-[1.7]">
-                <span className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-blue-50 text-blue-500 text-[12px] font-semibold flex items-center justify-center">
+              <li key={i} className="flex gap-3 text-[15px] text-gray-700 dark:text-gray-300 leading-[1.7]">
+                <span className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 text-[12px] font-semibold flex items-center justify-center">
                   {numberedMatch[1]}
                 </span>
                 <span>{numberedMatch[2]}</span>
@@ -51,20 +51,20 @@ function BodyRenderer({ body }: { body: string }) {
           }
           if (bulletMatch) {
             return (
-              <li key={i} className="flex gap-2.5 text-[15px] text-gray-700 leading-[1.7]">
-                <span className="shrink-0 mt-[9px] w-1.5 h-1.5 rounded-full bg-gray-400" />
+              <li key={i} className="flex gap-2.5 text-[15px] text-gray-700 dark:text-gray-300 leading-[1.7]">
+                <span className="shrink-0 mt-[9px] w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500" />
                 <span>{line.replace(/^\s*-\s*/, '')}</span>
               </li>
             );
           }
-          return <p key={i} className="text-[15px] text-gray-700 leading-[1.7]">{line}</p>;
+          return <p key={i} className="text-[15px] text-gray-700 dark:text-gray-300 leading-[1.7]">{line}</p>;
         })}
       </ul>
     );
   }
 
   return (
-    <p className="text-[15px] text-gray-700 leading-[1.7] whitespace-pre-wrap">{body}</p>
+    <p className="text-[15px] text-gray-700 dark:text-gray-300 leading-[1.7] whitespace-pre-wrap">{body}</p>
   );
 }
 
@@ -90,8 +90,8 @@ export default async function PaperDetailPage({ params }: Props) {
   } catch {
     return (
       <main className="max-w-3xl mx-auto px-4 py-12 text-center">
-        <p className="text-gray-500">논문을 찾을 수 없습니다.</p>
-        <Link href="/" className="mt-4 inline-block text-blue-500 hover:underline">목록으로</Link>
+        <p className="text-gray-500 dark:text-gray-400">논문을 찾을 수 없습니다.</p>
+        <Link href="/" className="mt-4 inline-block text-blue-500 dark:text-blue-400 hover:underline">목록으로</Link>
       </main>
     );
   }
@@ -102,10 +102,10 @@ export default async function PaperDetailPage({ params }: Props) {
   const isBioRxiv = srcLower === 'biorxiv';
   const sourceLabel = isPubMed ? 'PubMed' : isMedRxiv ? 'medRxiv' : isBioRxiv ? 'bioRxiv' : paper.source;
   const sourceBadgeClass = isPubMed
-    ? 'bg-blue-100 text-blue-700'
+    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
     : isMedRxiv
-    ? 'bg-purple-100 text-purple-700'
-    : 'bg-orange-100 text-orange-700';
+    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+    : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400';
   const sections = paper.summary_ko ? parseSections(paper.summary_ko) : [];
   const highlightSection = sections.find(s => s.heading === '한 줄 핵심');
   const otherSections = sections.filter(s => s.heading !== '한 줄 핵심');
@@ -115,37 +115,37 @@ export default async function PaperDetailPage({ params }: Props) {
       <BackButton />
 
       {/* 헤더 카드 */}
-      <div className="bg-white rounded-2xl shadow-card p-6 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-card p-6 mb-6">
         {/* 배지 */}
         <div className="flex items-center gap-2 mb-4">
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${sourceBadgeClass}`}>
             {sourceLabel}
           </span>
           {paper.topic && (
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
               {paper.topic}
             </span>
           )}
           {!isPubMed && (
-            <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
               피어리뷰 미완료
             </span>
           )}
           {paper.abstract_only && (
-            <span className="text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
               초록 기반 요약
             </span>
           )}
         </div>
 
         {/* 제목 */}
-        <h1 className="text-xl font-bold text-gray-900 leading-snug mb-3">{paper.title}</h1>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-snug mb-3">{paper.title}</h1>
 
         {/* 메타 */}
         {paper.authors && (
-          <p className="text-[13px] text-gray-500 mb-2.5 line-clamp-2">{paper.authors}</p>
+          <p className="text-[13px] text-gray-500 dark:text-gray-400 mb-2.5 line-clamp-2">{paper.authors}</p>
         )}
-        <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-gray-400">
+        <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-gray-400 dark:text-gray-500">
           {paper.published_date && <span>{paper.published_date}</span>}
           {paper.citation_count > 0 && (
             <>
@@ -177,12 +177,12 @@ export default async function PaperDetailPage({ params }: Props) {
 
       {/* 한 줄 핵심 강조 박스 */}
       {highlightSection && (
-        <div className="bg-blue-50 rounded-2xl p-5 mb-5">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-5 mb-5">
           <div className="flex items-center gap-1.5 mb-2.5">
             <span className="text-base">💡</span>
-            <span className="text-[13px] font-semibold text-blue-500 uppercase tracking-wide">한 줄 핵심</span>
+            <span className="text-[13px] font-semibold text-blue-500 dark:text-blue-400 uppercase tracking-wide">한 줄 핵심</span>
           </div>
-          <p className="text-[16px] text-gray-800 font-medium leading-[1.7]">{highlightSection.body}</p>
+          <p className="text-[16px] text-gray-800 dark:text-gray-200 font-medium leading-[1.7]">{highlightSection.body}</p>
         </div>
       )}
 
@@ -190,10 +190,10 @@ export default async function PaperDetailPage({ params }: Props) {
       {otherSections.length > 0 && (
         <div className="space-y-3">
           {otherSections.map((s, i) => (
-            <div key={i} className="bg-white rounded-2xl p-5">
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-base">{SECTION_ICONS[s.heading] ?? '📝'}</span>
-                <h2 className="text-[15px] font-semibold text-gray-900">{s.heading}</h2>
+                <h2 className="text-[15px] font-semibold text-gray-900 dark:text-white">{s.heading}</h2>
               </div>
               <BodyRenderer body={s.body} />
             </div>
@@ -202,7 +202,7 @@ export default async function PaperDetailPage({ params }: Props) {
       )}
 
       {sections.length === 0 && (
-        <div className="bg-white rounded-2xl p-6 text-center text-[14px] text-gray-400">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center text-[14px] text-gray-400 dark:text-gray-500">
           요약이 아직 생성되지 않았습니다.
         </div>
       )}
