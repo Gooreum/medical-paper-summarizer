@@ -56,7 +56,9 @@ function HomeContent() {
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [sortBy, setSortBy] = useState<SortBy>('crawled_date');
+  const rawSort = searchParams.get('sort');
+  const sortParam: SortBy = rawSort === 'published_date' || rawSort === 'citation_count' ? rawSort : 'crawled_date';
+  const [sortBy, setSortBy] = useState<SortBy>(sortParam);
   const [topicCounts, setTopicCounts] = useState<{ total: number; counts: Record<string, number> }>({ total: 0, counts: {} });
   const scrollRestored = useRef(false);
 
@@ -97,6 +99,15 @@ function HomeContent() {
     sessionStorage.removeItem(SCROLL_KEY);
     const params = new URLSearchParams();
     if (topic !== '전체') params.set('topic', topic);
+    if (sortBy !== 'crawled_date') params.set('sort', sortBy);
+    router.replace(params.toString() ? `/?${params}` : '/');
+  }
+
+  function handleSortChange(sort: SortBy) {
+    setSortBy(sort);
+    const params = new URLSearchParams();
+    if (selected !== '전체') params.set('topic', selected);
+    if (sort !== 'crawled_date') params.set('sort', sort);
     router.replace(params.toString() ? `/?${params}` : '/');
   }
 
@@ -171,7 +182,7 @@ function HomeContent() {
         {SORT_OPTIONS.map(opt => (
           <button
             key={opt.value}
-            onClick={() => setSortBy(opt.value)}
+            onClick={() => handleSortChange(opt.value)}
             className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
               sortBy === opt.value
                 ? 'bg-gray-900 text-white border-gray-900'
