@@ -7,7 +7,7 @@ import DateSection from '@/src/components/DateSection';
 import PaperCard from '@/src/components/PaperCard';
 import { fetchPapers, fetchTopicCounts, type Paper } from '@/src/lib/api';
 
-const TOPICS = ['근비대', '해부학', '자세교정', '영양학', '탈모치료', '노화', '웨이트 트레이닝', '수면', '다이어트', '북마크'];
+const TOPICS = ['근비대', '해부학', '자세교정', '영양학', '탈모치료', '노화', '웨이트 트레이닝', '수면', '다이어트'];
 const LIMIT = 50;
 const SCROLL_KEY = 'home_scroll';
 
@@ -56,6 +56,9 @@ function HomeContent() {
     const saved = localStorage.getItem('bookmarked_papers');
     return saved ? new Set<number>(JSON.parse(saved)) : new Set<number>();
   });
+  const [showBookmarks, setShowBookmarks] = useState(false);
+  const [bookmarkPapers, setBookmarkPapers] = useState<Paper[]>([]);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
   const toggleBookmark = useCallback((id: number) => {
     setBookmarks(prev => {
@@ -66,25 +69,40 @@ function HomeContent() {
     });
   }, []);
 
-  const load = useCallback(async (topic: string, currentSkip: number, append = false, bookmarkIds?: number[]) => {
+  const loadBookmarks = useCallback(async (ids: number[]) => {
+    if (ids.length === 0) { setBookmarkPapers([]); return; }
+    setBookmarkLoading(true);
+    try {
+      const data = await fetchPapers(undefined, undefined, 0, 200, ids);
+      setBookmarkPapers(data);
+    } catch {
+      // keep existing
+    } finally {
+      setBookmarkLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showBookmarks) {
+      loadBookmarks(Array.from(bookmarks));
+    }
+  }, [showBookmarks, loadBookmarks]); // bookmarks 변경 시 북마크 뷰가 열려있으면 재로드
+
+  // 북마크 삭제 시 bookmarkPapers에서도 제거
+  useEffect(() => {
+    if (showBookmarks) {
+      setBookmarkPapers(prev => prev.filter(p => bookmarks.has(p.id)));
+    }
+  }, [bookmarks, showBookmarks]);
+
+  const load = useCallback(async (topic: string, currentSkip: number, append = false) => {
     if (currentSkip === 0) setLoading(true);
     else setLoadingMore(true);
     try {
-      if (topic === '북마크') {
-        if (!bookmarkIds || bookmarkIds.length === 0) {
-          setPapers([]);
-          setHasMore(false);
-          return;
-        }
-        const data = await fetchPapers(undefined, undefined, currentSkip, LIMIT, bookmarkIds);
-        setPapers((prev) => (append ? [...prev, ...data] : data));
-        setHasMore(data.length === LIMIT);
-      } else {
-        const topicParam = topic === '전체' ? undefined : topic;
-        const data = await fetchPapers(topicParam, undefined, currentSkip, LIMIT);
-        setPapers((prev) => (append ? [...prev, ...data] : data));
-        setHasMore(data.length === LIMIT);
-      }
+      const topicFilter = topic === '전체' ? undefined : topic;
+      const data = await fetchPapers(topicFilter, undefined, currentSkip, LIMIT);
+      setPapers((prev) => (append ? [...prev, ...data] : data));
+      setHasMore(data.length === LIMIT);
     } catch {
       // keep existing state on error
     } finally {
@@ -93,27 +111,24 @@ function HomeContent() {
     }
   }, []);
 
-  // 토픽 변경 → URL 업데이트
   function handleTopicChange(topic: string) {
     setSelected(topic);
+    setShowBookmarks(false);
     sessionStorage.removeItem(SCROLL_KEY);
     const params = new URLSearchParams();
     if (topic !== '전체') params.set('topic', topic);
     router.replace(params.toString() ? `/?${params}` : '/');
   }
 
-  // 토픽 바뀌면 데이터 로드
   useEffect(() => {
     setSkip(0);
-    load(selected, 0, false, selected === '북마크' ? Array.from(bookmarks) : undefined);
-  }, [selected, load]); // bookmarks 변경은 북마크 탭에서 직접 처리
+    load(selected, 0);
+  }, [selected, load]);
 
-  // 토픽 카운트 로드
   useEffect(() => {
     fetchTopicCounts().then(setTopicCounts).catch(() => {});
   }, []);
 
-  // 스크롤 위치 저장 (페이지 이탈 전)
   useEffect(() => {
     const saveScroll = () => {
       sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
@@ -122,12 +137,10 @@ function HomeContent() {
     return () => window.removeEventListener('beforeunload', saveScroll);
   }, []);
 
-  // PaperCard 클릭 시 스크롤 저장
   function handleCardClick() {
     sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
   }
 
-  // 로딩 완료 후 스크롤 복원
   useEffect(() => {
     if (!loading && !scrollRestored.current) {
       const saved = sessionStorage.getItem(SCROLL_KEY);
@@ -146,7 +159,7 @@ function HomeContent() {
   function handleLoadMore() {
     const nextSkip = skip + LIMIT;
     setSkip(nextSkip);
-    load(selected, nextSkip, true, selected === '북마크' ? Array.from(bookmarks) : undefined);
+    load(selected, nextSkip, true);
   }
 
   const grouped = groupByDate(papers);
@@ -159,11 +172,60 @@ function HomeContent() {
           <h1 className="text-2xl font-bold text-gray-900 mb-0.5">의학 논문 AI 요약</h1>
           <p className="text-sm text-gray-400">PubMed · bioRxiv 최신 논문을 매일 한국어로 요약합니다</p>
         </div>
-        <a href="/admin" className="text-xs text-gray-400 hover:text-gray-600 mt-1">
-          관리자
-        </a>
+        <div className="flex items-center gap-3 mt-1">
+          <button
+            onClick={() => setShowBookmarks(v => !v)}
+            className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              showBookmarks
+                ? 'bg-yellow-400 border-yellow-400 text-white font-semibold'
+                : 'border-gray-200 text-gray-400 hover:border-yellow-300 hover:text-yellow-500'
+            }`}
+          >
+            ★ {bookmarks.size > 0 ? bookmarks.size : '북마크'}
+          </button>
+          <a href="/admin" className="text-xs text-gray-400 hover:text-gray-600">
+            관리자
+          </a>
+        </div>
       </div>
 
+      {/* 북마크 섹션 */}
+      {showBookmarks && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-gray-800 flex items-center gap-1.5">
+              <span className="text-yellow-400">★</span> 북마크한 논문
+              {bookmarks.size > 0 && (
+                <span className="text-sm font-normal text-gray-400">· {bookmarks.size}편</span>
+              )}
+            </h2>
+            <button
+              onClick={() => setShowBookmarks(false)}
+              className="text-xs text-gray-400 hover:text-gray-600"
+            >
+              닫기
+            </button>
+          </div>
+          {bookmarkLoading ? (
+            <div className="flex flex-col gap-4">
+              {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          ) : bookmarkPapers.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">북마크한 논문이 없습니다.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {bookmarkPapers.map((p) => (
+                <div key={p.id} onClick={handleCardClick}>
+                  <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
+                </div>
+              ))}
+            </div>
+          )}
+          <hr className="mt-8 border-gray-200" />
+        </div>
+      )}
+
+      {/* 토픽 탭 + 논문 목록 */}
       <TopicTabs topics={TOPICS} selected={selected} onChange={handleTopicChange} counts={topicCounts.counts} total={topicCounts.total} />
 
       {loading ? (
