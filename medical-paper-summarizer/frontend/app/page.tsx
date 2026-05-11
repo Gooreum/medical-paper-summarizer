@@ -167,6 +167,22 @@ function HomeContent() {
 
       <TopicTabs topics={TOPICS} selected={selected} onChange={handleTopicChange} counts={topicCounts.counts} total={topicCounts.total} />
 
+      <div className="flex gap-2 mb-5">
+        {SORT_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => setSortBy(opt.value)}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              sortBy === opt.value
+                ? 'bg-gray-900 text-white border-gray-900'
+                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="flex flex-col gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -177,17 +193,27 @@ function HomeContent() {
         <p className="text-gray-500 mt-8 text-center">수집된 논문이 없습니다.</p>
       ) : (
         <>
-          {sortedDates.map((date) => (
-            <DateSection key={date} date={date} count={grouped[date].length}>
-              <div className="flex flex-col gap-3">
-                {grouped[date].map((p) => (
-                  <div key={p.id} onClick={handleCardClick}>
-                    <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
-                  </div>
-                ))}
-              </div>
-            </DateSection>
-          ))}
+          {sortBy === 'crawled_date' ? (
+            sortedDates.map((date) => (
+              <DateSection key={date} date={date} count={grouped[date].length}>
+                <div className="flex flex-col gap-3">
+                  {grouped[date].map((p) => (
+                    <div key={p.id} onClick={handleCardClick}>
+                      <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
+                    </div>
+                  ))}
+                </div>
+              </DateSection>
+            ))
+          ) : (
+            <div className="flex flex-col gap-3">
+              {papers.map((p) => (
+                <div key={p.id} onClick={handleCardClick}>
+                  <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
+                </div>
+              ))}
+            </div>
+          )}
           {hasMore && (
             <div className="flex justify-center mt-6">
               <button
