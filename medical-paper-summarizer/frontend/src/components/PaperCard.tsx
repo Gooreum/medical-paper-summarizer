@@ -44,11 +44,11 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
           <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${sourceBadgeColor}`}>
             {sourceLabel}
           </span>
-          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
             {paper.topic}
           </span>
           {paper.abstract_only && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
               초록
             </span>
           )}
@@ -71,7 +71,7 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
 
       {/* 한 줄 핵심 */}
       {preview && (
-        <p className="text-[14px] text-gray-500 line-clamp-2 leading-relaxed mb-3">
+        <p className="text-[14px] text-gray-700 line-clamp-2 leading-relaxed mb-3">
           {preview}
         </p>
       )}
