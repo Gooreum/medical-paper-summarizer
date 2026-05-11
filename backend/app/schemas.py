@@ -37,3 +37,13 @@ class CrawlTriggerRequest(BaseModel):
     papers_per_topic: Optional[int] = None
     sources: Optional[List[str]] = None
     model: Optional[str] = None
+
+
+class ScheduleConfig(BaseModel):
+    enabled: bool = True
+    hour: int = 8
+    minute: int = 0
+    topics: List[str] = []
+    papers_per_topic: int = 5
+    sources: List[str] = ["pubmed", "biorxiv"]
+    model: Optional[str] = None
