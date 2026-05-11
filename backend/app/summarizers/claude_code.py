@@ -57,3 +57,30 @@ class ClaudeCodeSummarizer(BaseSummarizer):
                 f"claude exited with code {result.returncode}: {result.stderr}"
             )
         return result.stdout
+
+
+def check_relevance(title: str, abstract: str, topic: str) -> bool:
+    """Return True if paper is relevant to topic. Fails open on error."""
+    if not abstract and not title:
+        return True
+    text = f"Title: {title}\n\nAbstract: {abstract[:1500]}"
+    prompt = (
+        f"You are a strict medical paper relevance filter.\n\n"
+        f"{text}\n\n"
+        f"Is the PRIMARY subject of this paper '{topic}'?\n"
+        f"Answer only 'yes' or 'no'.\n"
+        f"- 'yes': the paper's main research topic is {topic}\n"
+        f"- 'no': {topic} is mentioned only briefly, as background, or is not the focus"
+    )
+    try:
+        result = subprocess.run(
+            ["claude", "-p", "--model", "haiku", prompt],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if result.returncode != 0:
+            return True  # fail open
+        return result.stdout.strip().lower().startswith("yes")
+    except Exception:
+        return True  # fail open

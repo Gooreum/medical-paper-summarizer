@@ -14,6 +14,7 @@ from app.database import get_db
 from app.models import Paper
 from app.schemas import CrawlTriggerRequest
 from app.summarizers.factory import get_summarizer
+from app.summarizers.claude_code import check_relevance
 
 router = APIRouter()
 
@@ -137,6 +138,12 @@ async def run_crawl_job(
                     full_text = (paper_dict.get("full_text", "") or "").replace("\x00", "")
                     title = paper_dict.get("title", "")
                     source = paper_dict.get("source", "").upper()
+                    abstract = paper_dict.get("abstract", "")
+                    relevant = await asyncio.to_thread(check_relevance, title, abstract, topic)
+                    if not relevant:
+                        _log(f"[{topic}] [{source}] 관련도 낮음 스킵: {title[:50]}")
+                        continue
+
                     _log(f"[{topic}] [{source}] 요약 중 ({idx}/{len(all_papers)}): {title[:50]}...")
 
                     summary_ko = await asyncio.to_thread(
