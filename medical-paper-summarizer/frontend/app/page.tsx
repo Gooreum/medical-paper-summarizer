@@ -24,6 +24,7 @@ const SOURCE_OPTIONS: { value: string; label: string }[] = [
   { value: 'pubmed', label: 'PubMed' },
   { value: 'biorxiv', label: 'bioRxiv' },
   { value: 'medrxiv', label: 'medRxiv' },
+  { value: 'koreamed', label: 'KoreaMed' },
 ];
 
 function groupByDate(papers: Paper[]): Record<string, Paper[]> {

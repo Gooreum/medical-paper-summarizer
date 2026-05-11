@@ -8,13 +8,13 @@ from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
 from app.crawlers.biorxiv import BioRxivCrawler
+from app.crawlers.koreamed import KoreMedCrawler
 from app.crawlers.pubmed import PubMedCrawler
 from app.crawlers.topics import PAPERS_PER_TOPIC, TOPICS
 from app.database import get_db
 from app.models import Paper
 from app.schemas import CrawlTriggerRequest
 from app.summarizers.factory import get_summarizer
-from app.summarizers.claude_code import check_relevance
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ def _log(msg: str) -> None:
         crawl_status["logs"] = crawl_status["logs"][-200:]
 
 
-ALL_SOURCES = ["pubmed", "biorxiv"]
+ALL_SOURCES = ["pubmed", "biorxiv", "koreamed"]
 
 @router.post("/crawl/trigger")
 async def trigger_crawl(
@@ -125,7 +125,18 @@ async def run_crawl_job(
                 except Exception as e:
                     _log(f"[{topic}] bioRxiv/medRxiv 실패 (스킵): {e}")
 
-            all_papers = pubmed_papers + biorxiv_papers
+            koreamed_papers = []
+            if "koreamed" in sources:
+                _log(f"[{topic}] KoreaMed 검색 중...")
+                try:
+                    koreamed_papers = await asyncio.to_thread(
+                        KoreMedCrawler().crawl, topic, existing_dois, max_papers=papers_per_topic, on_progress=_log
+                    )
+                    _log(f"[{topic}] KoreaMed {len(koreamed_papers)}편 수집 완료")
+                except Exception as e:
+                    _log(f"[{topic}] KoreaMed 실패 (스킵): {e}")
+
+            all_papers = pubmed_papers + biorxiv_papers + koreamed_papers
 
             saved_count = 0
             for idx, paper_dict in enumerate(all_papers, 1):
@@ -138,11 +149,6 @@ async def run_crawl_job(
                     full_text = (paper_dict.get("full_text", "") or "").replace("\x00", "")
                     title = paper_dict.get("title", "")
                     source = paper_dict.get("source", "").upper()
-                    abstract = paper_dict.get("abstract", "")
-                    relevant = await asyncio.to_thread(check_relevance, title, abstract, topic)
-                    if not relevant:
-                        _log(f"[{topic}] [{source}] 관련도 낮음 스킵: {title[:50]}")
-                        continue
 
                     _log(f"[{topic}] [{source}] 요약 중 ({idx}/{len(all_papers)}): {title[:50]}...")
 
