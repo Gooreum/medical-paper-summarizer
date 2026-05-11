@@ -25,10 +25,8 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
   const src = (paper.source || '').toLowerCase();
   const sourceBadgeColor =
     src === 'pubmed'
-      ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-200'
-      : src === 'medrxiv'
-      ? 'bg-purple-50 text-purple-600 ring-1 ring-purple-200'
-      : 'bg-orange-50 text-orange-600 ring-1 ring-orange-200';
+      ? 'bg-blue-50 text-blue-500'
+      : 'bg-gray-100 text-gray-500';
   const sourceLabel =
     src === 'pubmed' ? 'PubMed'
     : src === 'medrxiv' ? 'medRxiv'
@@ -37,7 +35,7 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
   const preview = extractOneLiner(paper.summary_ko);
 
   return (
-    <div className="group relative border border-gray-200 rounded-xl p-5 hover:border-blue-200 hover:shadow-md transition-all duration-150 bg-white cursor-pointer">
+    <div className="group relative rounded-2xl p-5 bg-white shadow-card hover:shadow-card-hover transition-shadow duration-200 cursor-pointer">
       {/* 카드 전체 클릭 오버레이 */}
       <Link href={`/papers/${paper.id}`} className="absolute inset-0 rounded-xl" aria-label={paper.title} />
 
@@ -51,7 +49,7 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
             {paper.topic}
           </span>
           {paper.abstract_only && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
               초록
             </span>
           )}
@@ -59,7 +57,7 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleBookmark?.(paper.id); }}
           className={`shrink-0 ml-2 text-xl transition-colors ${
-            isBookmarked ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'
+            isBookmarked ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'
           }`}
           aria-label="북마크"
         >
@@ -68,7 +66,7 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
       </div>
 
       {/* 제목 */}
-      <h3 className="text-[15px] font-semibold text-gray-900 group-hover:text-blue-600 line-clamp-2 leading-snug mb-2 transition-colors">
+      <h3 className="text-[15px] font-semibold text-gray-900 group-hover:text-blue-500 line-clamp-2 leading-snug mb-2 transition-colors">
         {paper.title}
       </h3>
 
@@ -103,7 +101,7 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="relative z-10 flex items-center gap-0.5 text-blue-500 hover:text-blue-700 font-medium"
+            className="relative z-10 flex items-center gap-0.5 text-blue-500 hover:text-blue-600 font-medium"
           >
             원문
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
