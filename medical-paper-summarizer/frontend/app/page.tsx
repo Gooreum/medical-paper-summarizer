@@ -246,7 +246,7 @@ function HomeContent() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
@@ -258,7 +258,7 @@ function HomeContent() {
           {sortBy === 'crawled_date' ? (
             sortedDates.map((date) => (
               <DateSection key={date} date={date} count={grouped[date].length}>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-3">
                   {grouped[date].map((p) => (
                     <div key={p.id} onClick={handleCardClick}>
                       <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
@@ -268,7 +268,7 @@ function HomeContent() {
               </DateSection>
             ))
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {papers.map((p) => (
                 <div key={p.id} onClick={handleCardClick}>
                   <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
