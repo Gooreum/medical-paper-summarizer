@@ -8,6 +8,7 @@ const ALL_TOPICS = ['근비대', '해부학', '자세교정', '영양학', '탈�
 const SOURCE_OPTIONS = [
   { id: 'pubmed', label: 'PubMed', description: '피어리뷰 논문' },
   { id: 'biorxiv', label: 'bioRxiv / medRxiv', description: '프리프린트' },
+  { id: 'koreamed', label: 'KoreaMed', description: '한국 의학 저널' },
 ];
 
 const CLAUDE_MODELS = [

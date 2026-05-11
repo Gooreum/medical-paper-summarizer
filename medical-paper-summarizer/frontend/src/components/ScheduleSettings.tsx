@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { getScheduleConfig, updateScheduleConfig, type ScheduleConfig } from '@/src/lib/api';
 
 const ALL_TOPICS = ['근비대', '해부학', '자세교정', '영양학', '탈모치료', '노화', '웨이트 트레이닝', '수면', '다이어트'];
-const ALL_SOURCES = ['pubmed', 'biorxiv'];
+const ALL_SOURCES = ['pubmed', 'biorxiv', 'koreamed'];
 const CLAUDE_MODELS = [
   { id: null, label: '기본 (환경변수)' },
   { id: 'claude-opus-4-7', label: 'Opus 4.7' },
