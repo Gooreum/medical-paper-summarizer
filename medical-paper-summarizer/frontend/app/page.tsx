@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import TopicTabs from '@/src/components/TopicTabs';
 import DateSection from '@/src/components/DateSection';
 import PaperCard from '@/src/components/PaperCard';
@@ -56,9 +57,6 @@ function HomeContent() {
     const saved = localStorage.getItem('bookmarked_papers');
     return saved ? new Set<number>(JSON.parse(saved)) : new Set<number>();
   });
-  const [showBookmarks, setShowBookmarks] = useState(false);
-  const [bookmarkPapers, setBookmarkPapers] = useState<Paper[]>([]);
-  const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
   const toggleBookmark = useCallback((id: number) => {
     setBookmarks(prev => {
@@ -68,32 +66,6 @@ function HomeContent() {
       return next;
     });
   }, []);
-
-  const loadBookmarks = useCallback(async (ids: number[]) => {
-    if (ids.length === 0) { setBookmarkPapers([]); return; }
-    setBookmarkLoading(true);
-    try {
-      const data = await fetchPapers(undefined, undefined, 0, 200, ids);
-      setBookmarkPapers(data);
-    } catch {
-      // keep existing
-    } finally {
-      setBookmarkLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (showBookmarks) {
-      loadBookmarks(Array.from(bookmarks));
-    }
-  }, [showBookmarks, loadBookmarks]); // bookmarks 변경 시 북마크 뷰가 열려있으면 재로드
-
-  // 북마크 삭제 시 bookmarkPapers에서도 제거
-  useEffect(() => {
-    if (showBookmarks) {
-      setBookmarkPapers(prev => prev.filter(p => bookmarks.has(p.id)));
-    }
-  }, [bookmarks, showBookmarks]);
 
   const load = useCallback(async (topic: string, currentSkip: number, append = false) => {
     if (currentSkip === 0) setLoading(true);
@@ -113,7 +85,6 @@ function HomeContent() {
 
   function handleTopicChange(topic: string) {
     setSelected(topic);
-    setShowBookmarks(false);
     sessionStorage.removeItem(SCROLL_KEY);
     const params = new URLSearchParams();
     if (topic !== '전체') params.set('topic', topic);
@@ -173,59 +144,18 @@ function HomeContent() {
           <p className="text-sm text-gray-400">PubMed · bioRxiv 최신 논문을 매일 한국어로 요약합니다</p>
         </div>
         <div className="flex items-center gap-3 mt-1">
-          <button
-            onClick={() => setShowBookmarks(v => !v)}
-            className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-colors ${
-              showBookmarks
-                ? 'bg-yellow-400 border-yellow-400 text-white font-semibold'
-                : 'border-gray-200 text-gray-400 hover:border-yellow-300 hover:text-yellow-500'
-            }`}
+          <Link
+            href="/bookmarks"
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-gray-200 text-gray-400 hover:border-yellow-300 hover:text-yellow-500 transition-colors"
           >
             ★ {bookmarks.size > 0 ? bookmarks.size : '북마크'}
-          </button>
+          </Link>
           <a href="/admin" className="text-xs text-gray-400 hover:text-gray-600">
             관리자
           </a>
         </div>
       </div>
 
-      {/* 북마크 섹션 */}
-      {showBookmarks && (
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-800 flex items-center gap-1.5">
-              <span className="text-yellow-400">★</span> 북마크한 논문
-              {bookmarks.size > 0 && (
-                <span className="text-sm font-normal text-gray-400">· {bookmarks.size}편</span>
-              )}
-            </h2>
-            <button
-              onClick={() => setShowBookmarks(false)}
-              className="text-xs text-gray-400 hover:text-gray-600"
-            >
-              닫기
-            </button>
-          </div>
-          {bookmarkLoading ? (
-            <div className="flex flex-col gap-4">
-              {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
-            </div>
-          ) : bookmarkPapers.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">북마크한 논문이 없습니다.</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {bookmarkPapers.map((p) => (
-                <div key={p.id} onClick={handleCardClick}>
-                  <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
-                </div>
-              ))}
-            </div>
-          )}
-          <hr className="mt-8 border-gray-200" />
-        </div>
-      )}
-
-      {/* 토픽 탭 + 논문 목록 */}
       <TopicTabs topics={TOPICS} selected={selected} onChange={handleTopicChange} counts={topicCounts.counts} total={topicCounts.total} />
 
       {loading ? (
