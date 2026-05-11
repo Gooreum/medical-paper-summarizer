@@ -33,8 +33,8 @@ function groupByDate(papers: Paper[]): Record<string, Paper[]> {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl p-5 animate-pulse bg-white shadow-card">
-      <div className="flex gap-2 mb-2">
+    <div className="rounded-2xl p-4 animate-pulse bg-white">
+      <div className="flex gap-2 mb-2.5">
         <div className="h-5 w-16 bg-gray-200 rounded-full" />
         <div className="h-5 w-16 bg-gray-100 rounded-full" />
       </div>
@@ -157,88 +157,92 @@ function HomeContent() {
   const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-start justify-between mb-7">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-0.5">의학 논문 AI 요약</h1>
-          <p className="text-sm text-gray-400">PubMed · bioRxiv 최신 논문을 매일 한국어로 요약합니다</p>
+    <div className="min-h-screen">
+      <header className="bg-white px-4 pt-6 pb-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-[22px] font-bold text-gray-900 leading-tight">의학 논문 AI 요약</h1>
+            <p className="text-[13px] text-gray-500 mt-1">PubMed · bioRxiv 최신 논문을 매일 한국어로 요약합니다</p>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <Link
+              href="/bookmarks"
+              className="flex items-center gap-1 text-[12px] px-3 py-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors font-medium"
+            >
+              ★ {bookmarks.size > 0 ? bookmarks.size : '저장'}
+            </Link>
+            <a href="/admin" className="text-[12px] text-gray-400 hover:text-gray-600">
+              관리자
+            </a>
+          </div>
         </div>
-        <div className="flex items-center gap-3 mt-1">
-          <Link
-            href="/bookmarks"
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors font-medium"
-          >
-            ★ {bookmarks.size > 0 ? bookmarks.size : '북마크'}
-          </Link>
-          <a href="/admin" className="text-xs text-gray-400 hover:text-gray-600">
-            관리자
-          </a>
-        </div>
-      </div>
+      </header>
 
       <TopicTabs topics={TOPICS} selected={selected} onChange={handleTopicChange} counts={topicCounts.counts} total={topicCounts.total} />
 
-      <div className="flex gap-2 mb-5">
-        {SORT_OPTIONS.map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => handleSortChange(opt.value)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              sortBy === opt.value
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="flex flex-col gap-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <SkeletonCard key={i} />
+      <div className="px-4 pb-8">
+        <div className="flex gap-2 py-3">
+          {SORT_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => handleSortChange(opt.value)}
+              className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
+                sortBy === opt.value
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+              }`}
+            >
+              {opt.label}
+            </button>
           ))}
         </div>
-      ) : papers.length === 0 ? (
-        <p className="text-gray-500 mt-8 text-center">수집된 논문이 없습니다.</p>
-      ) : (
-        <>
-          {sortBy === 'crawled_date' ? (
-            sortedDates.map((date) => (
-              <DateSection key={date} date={date} count={grouped[date].length}>
-                <div className="flex flex-col gap-3">
-                  {grouped[date].map((p) => (
-                    <div key={p.id} onClick={handleCardClick}>
-                      <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
-                    </div>
-                  ))}
-                </div>
-              </DateSection>
-            ))
-          ) : (
-            <div className="flex flex-col gap-3">
-              {papers.map((p) => (
-                <div key={p.id} onClick={handleCardClick}>
-                  <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
-                </div>
-              ))}
-            </div>
-          )}
-          {hasMore && (
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loadingMore ? '로딩 중...' : '더 보기'}
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </main>
+
+        {loading ? (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : papers.length === 0 ? (
+          <p className="text-gray-500 mt-8 text-center">수집된 논문이 없습니다.</p>
+        ) : (
+          <>
+            {sortBy === 'crawled_date' ? (
+              sortedDates.map((date) => (
+                <DateSection key={date} date={date} count={grouped[date].length}>
+                  <div className="flex flex-col gap-2">
+                    {grouped[date].map((p) => (
+                      <div key={p.id} onClick={handleCardClick}>
+                        <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
+                      </div>
+                    ))}
+                  </div>
+                </DateSection>
+              ))
+            ) : (
+              <div className="flex flex-col gap-2">
+                {papers.map((p) => (
+                  <div key={p.id} onClick={handleCardClick}>
+                    <PaperCard paper={p} isBookmarked={bookmarks.has(p.id)} onToggleBookmark={toggleBookmark} />
+                  </div>
+                ))}
+              </div>
+            )}
+            {hasMore && (
+              <div className="flex justify-center mt-6">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loadingMore ? '로딩 중...' : '더 보기'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 

@@ -13,15 +13,12 @@ function formatDate(dateStr: string): string {
 
 export default function DateSection({ date, count, children }: Props) {
   return (
-    <section className="mb-8">
-      <div className="flex items-center gap-2.5 mb-4">
-        <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+    <section className="mb-3">
+      <div className="flex items-center gap-1.5 px-1 mb-2">
+        <span className="text-[12px] font-medium text-gray-400">
           {formatDate(date)}
         </span>
-        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 shrink-0">
-          {count}편
-        </span>
-        <div className="flex-1 h-px bg-gray-200" />
+        <span className="text-[12px] text-gray-400">{count}편</span>
       </div>
       {children}
     </section>
