@@ -41,46 +41,46 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
       {/* 카드 전체 클릭 오버레이 */}
       <Link href={`/papers/${paper.id}`} className="absolute inset-0 rounded-xl" aria-label={paper.title} />
 
-      {/* 북마크 버튼 — 오버레이 위 */}
-      <button
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleBookmark?.(paper.id); }}
-        className={`relative z-10 absolute top-3 right-3 text-xl transition-colors ${
-          isBookmarked ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'
-        }`}
-        aria-label="북마크"
-      >
-        {isBookmarked ? '★' : '☆'}
-      </button>
-
-      {/* 배지 행 */}
-      <div className="relative flex items-center gap-1.5 mb-3 flex-wrap">
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sourceBadgeColor}`}>
-          {sourceLabel}
-        </span>
-        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-          {paper.topic}
-        </span>
-        {paper.abstract_only && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-200">
-            초록
+      {/* 배지 행 + 북마크 버튼 */}
+      <div className="relative z-10 flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sourceBadgeColor}`}>
+            {sourceLabel}
           </span>
-        )}
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+            {paper.topic}
+          </span>
+          {paper.abstract_only && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+              초록
+            </span>
+          )}
+        </div>
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleBookmark?.(paper.id); }}
+          className={`shrink-0 ml-2 text-xl transition-colors ${
+            isBookmarked ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'
+          }`}
+          aria-label="북마크"
+        >
+          {isBookmarked ? '★' : '☆'}
+        </button>
       </div>
 
       {/* 제목 */}
-      <h3 className="relative text-[15px] font-semibold text-gray-900 group-hover:text-blue-600 line-clamp-2 leading-snug mb-2 transition-colors">
+      <h3 className="text-[15px] font-semibold text-gray-900 group-hover:text-blue-600 line-clamp-2 leading-snug mb-2 transition-colors">
         {paper.title}
       </h3>
 
       {/* 한 줄 핵심 */}
       {preview && (
-        <p className="relative text-sm text-gray-500 line-clamp-2 leading-relaxed mb-3">
+        <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed mb-3">
           {preview}
         </p>
       )}
 
       {/* 하단 메타 */}
-      <div className="relative flex items-center justify-between pt-3 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-xs text-gray-400 truncate">
             {formatAuthors(paper.authors)}
