@@ -73,6 +73,15 @@ def list_topics(db: Session = Depends(get_db)):
     return {"topics": sorted(all_topics)}
 
 
+@router.get("/sources/counts")
+def source_counts(db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    rows = db.query(Paper.source, func.count(Paper.id)).group_by(Paper.source).all()
+    counts = {source: count for source, count in rows if source}
+    total = sum(counts.values())
+    return {"total": total, "counts": counts}
+
+
 @router.get("/topics/counts")
 def topic_counts(db: Session = Depends(get_db)):
     from sqlalchemy import func

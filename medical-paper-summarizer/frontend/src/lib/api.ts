@@ -69,6 +69,12 @@ export async function fetchTopicCounts(): Promise<{ total: number; counts: Recor
   return res.json();
 }
 
+export async function fetchSourceCounts(): Promise<{ total: number; counts: Record<string, number> }> {
+  const res = await fetch(`${API_BASE}/api/sources/counts`);
+  if (!res.ok) throw new Error('Failed to fetch source counts');
+  return res.json();
+}
+
 export type ScheduleConfig = {
   enabled: boolean;
   hour: number;

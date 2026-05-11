@@ -6,7 +6,7 @@ import Link from 'next/link';
 import TopicTabs from '@/src/components/TopicTabs';
 import DateSection from '@/src/components/DateSection';
 import PaperCard from '@/src/components/PaperCard';
-import { fetchPapers, fetchTopicCounts, type Paper } from '@/src/lib/api';
+import { fetchPapers, fetchTopicCounts, fetchSourceCounts, type Paper } from '@/src/lib/api';
 
 const TOPICS = ['근비대', '해부학', '자세교정', '영양학', '탈모치료', '노화', '웨이트 트레이닝', '수면', '다이어트'];
 const LIMIT = 50;
@@ -23,7 +23,6 @@ const SOURCE_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: '전체' },
   { value: 'pubmed', label: 'PubMed' },
   { value: 'biorxiv', label: 'bioRxiv' },
-  { value: 'medrxiv', label: 'medRxiv' },
   { value: 'koreamed', label: 'KoreaMed' },
 ];
 
@@ -70,6 +69,7 @@ function HomeContent() {
   const rawSource = searchParams.get('source') || '';
   const [sourceFilter, setSourceFilter] = useState(rawSource);
   const [topicCounts, setTopicCounts] = useState<{ total: number; counts: Record<string, number> }>({ total: 0, counts: {} });
+  const [sourceCounts, setSourceCounts] = useState<Record<string, number>>({});
   const scrollRestored = useRef(false);
 
   const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
@@ -136,6 +136,7 @@ function HomeContent() {
 
   useEffect(() => {
     fetchTopicCounts().then(setTopicCounts).catch(() => {});
+    fetchSourceCounts().then(d => setSourceCounts(d.counts)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -212,19 +213,26 @@ function HomeContent() {
         ))}
       </div>
       <div className="flex items-center gap-2 mb-4">
-        {SOURCE_OPTIONS.map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => handleSourceChange(opt.value)}
-            className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
-              sourceFilter === opt.value
-                ? 'bg-gray-800 text-white'
-                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+        {SOURCE_OPTIONS.map(opt => {
+          const count = opt.value === '' ? topicCounts.total : (sourceCounts[opt.value] ?? 0);
+          const isActive = sourceFilter === opt.value;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => handleSourceChange(opt.value)}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
+                isActive ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+              }`}
+            >
+              {opt.label}
+              {count > 0 && (
+                <span className={`text-[11px] font-semibold ${isActive ? 'text-gray-300' : 'text-gray-400'}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (
