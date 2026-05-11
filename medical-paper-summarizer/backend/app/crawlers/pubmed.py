@@ -164,6 +164,7 @@ class PubMedCrawler:
                     "citation_count": citations,
                     "published_date": pub_date,
                     "crawled_date": date.today(),
+                    "abstract": abstract,
                     "abstract_only": abstract_only,
                 })
             except Exception as e:

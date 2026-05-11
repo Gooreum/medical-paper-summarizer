@@ -56,6 +56,7 @@ class BioRxivCrawler:
                     seen_dois.add(doi)
 
                     title = (item.get("title") or "").strip()
+                    abstract_text = (item.get("abstractText") or "").strip()
                     is_medrxiv = "medrxiv" in (item.get("source") or "").lower() or "medrxiv" in doi
                     server = "medrxiv" if is_medrxiv else "biorxiv"
                     source_label = "medRxiv" if is_medrxiv else "bioRxiv"
@@ -65,7 +66,6 @@ class BioRxivCrawler:
 
                     abstract_only = False
                     if not full_text:
-                        abstract_text = item.get("abstractText") or ""
                         if abstract_text:
                             full_text = abstract_text
                             abstract_only = True
@@ -99,6 +99,7 @@ class BioRxivCrawler:
                         "citation_count": citation_count,
                         "published_date": pub_date,
                         "crawled_date": date.today(),
+                        "abstract": abstract_text,
                         "abstract_only": abstract_only,
                     })
 
