@@ -52,11 +52,12 @@ function HomeContent() {
   const [topicCounts, setTopicCounts] = useState<{ total: number; counts: Record<string, number> }>({ total: 0, counts: {} });
   const scrollRestored = useRef(false);
 
-  const [bookmarks, setBookmarks] = useState<Set<number>>(() => {
-    if (typeof window === 'undefined') return new Set();
+  const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
     const saved = localStorage.getItem('bookmarked_papers');
-    return saved ? new Set<number>(JSON.parse(saved)) : new Set<number>();
-  });
+    if (saved) setBookmarks(new Set<number>(JSON.parse(saved)));
+  }, []);
 
   const toggleBookmark = useCallback((id: number) => {
     setBookmarks(prev => {

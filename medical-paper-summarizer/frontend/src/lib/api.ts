@@ -64,3 +64,29 @@ export async function fetchTopicCounts(): Promise<{ total: number; counts: Recor
   if (!res.ok) throw new Error('Failed to fetch topic counts');
   return res.json();
 }
+
+export type ScheduleConfig = {
+  enabled: boolean;
+  hour: number;
+  minute: number;
+  topics: string[];
+  papers_per_topic: number;
+  sources: string[];
+  model: string | null;
+};
+
+export async function getScheduleConfig(): Promise<ScheduleConfig> {
+  const res = await fetch(`${API_BASE}/api/schedule`);
+  if (!res.ok) throw new Error('Failed to fetch schedule config');
+  return res.json();
+}
+
+export async function updateScheduleConfig(config: ScheduleConfig): Promise<ScheduleConfig> {
+  const res = await fetch(`${API_BASE}/api/schedule`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
+  if (!res.ok) throw new Error('Failed to update schedule config');
+  return res.json();
+}
