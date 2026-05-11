@@ -30,13 +30,26 @@ function cleanBody(text: string): string {
 function BodyRenderer({ body }: { body: string }) {
   const lines = body.split('\n').filter(l => l.trim());
   const hasBullets = lines.some(l => l.trimStart().startsWith('- '));
+  const hasNumbered = lines.some(l => /^\d+\.\s/.test(l.trimStart()));
 
-  if (hasBullets) {
+  if (hasBullets || hasNumbered) {
     return (
       <ul className="space-y-2.5">
         {lines.map((line, i) => {
-          const isBullet = line.trimStart().startsWith('- ');
-          if (isBullet) {
+          const bulletMatch = line.trimStart().startsWith('- ');
+          const numberedMatch = /^(\d+)\.\s(.*)/.exec(line.trimStart());
+
+          if (numberedMatch) {
+            return (
+              <li key={i} className="flex gap-3 text-[15px] text-gray-700 leading-[1.7]">
+                <span className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-blue-50 text-blue-500 text-[12px] font-semibold flex items-center justify-center">
+                  {numberedMatch[1]}
+                </span>
+                <span>{numberedMatch[2]}</span>
+              </li>
+            );
+          }
+          if (bulletMatch) {
             return (
               <li key={i} className="flex gap-2.5 text-[15px] text-gray-700 leading-[1.7]">
                 <span className="shrink-0 mt-[9px] w-1.5 h-1.5 rounded-full bg-gray-400" />
