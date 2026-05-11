@@ -23,9 +23,12 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authed) return;
-    getCrawlStatus()
-      .then((s) => setStatus(s as CrawlStatus))
-      .catch(() => {});
+
+    const fetch = () => getCrawlStatus().then((s) => setStatus(s as CrawlStatus)).catch(() => {});
+    fetch();
+
+    const id = setInterval(fetch, 2000);
+    return () => clearInterval(id);
   }, [authed]);
 
   function handleLogin(e: React.FormEvent) {
