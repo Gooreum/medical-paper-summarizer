@@ -16,6 +16,7 @@ def list_papers(
     topic: Optional[str] = None,
     date: Optional[str] = None,
     ids: Optional[str] = None,
+    source: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
     sort: str = "crawled_date",
@@ -25,6 +26,9 @@ def list_papers(
 
     if topic:
         query = query.filter(Paper.topic == topic)
+
+    if source:
+        query = query.filter(Paper.source == source)
 
     if ids:
         id_list = [int(i) for i in ids.split(",") if i.strip().isdigit()]

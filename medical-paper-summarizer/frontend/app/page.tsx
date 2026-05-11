@@ -19,6 +19,13 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: 'citation_count', label: '인용수 높은순' },
 ];
 
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: '전체' },
+  { value: 'pubmed', label: 'PubMed' },
+  { value: 'biorxiv', label: 'bioRxiv' },
+  { value: 'medrxiv', label: 'medRxiv' },
+];
+
 function groupByDate(papers: Paper[]): Record<string, Paper[]> {
   return papers.reduce(
     (acc, p) => {
@@ -59,6 +66,8 @@ function HomeContent() {
   const rawSort = searchParams.get('sort');
   const sortParam: SortBy = rawSort === 'published_date' || rawSort === 'citation_count' ? rawSort : 'crawled_date';
   const [sortBy, setSortBy] = useState<SortBy>(sortParam);
+  const rawSource = searchParams.get('source') || '';
+  const [sourceFilter, setSourceFilter] = useState(rawSource);
   const [topicCounts, setTopicCounts] = useState<{ total: number; counts: Record<string, number> }>({ total: 0, counts: {} });
   const scrollRestored = useRef(false);
 
@@ -78,12 +87,12 @@ function HomeContent() {
     });
   }, []);
 
-  const load = useCallback(async (topic: string, currentSkip: number, append = false, sort: SortBy = 'crawled_date') => {
+  const load = useCallback(async (topic: string, currentSkip: number, append = false, sort: SortBy = 'crawled_date', source = '') => {
     if (currentSkip === 0) setLoading(true);
     else setLoadingMore(true);
     try {
       const topicFilter = topic === '전체' ? undefined : topic;
-      const data = await fetchPapers(topicFilter, undefined, currentSkip, LIMIT, undefined, sort);
+      const data = await fetchPapers(topicFilter, undefined, currentSkip, LIMIT, undefined, sort, source || undefined);
       setPapers((prev) => (append ? [...prev, ...data] : data));
       setHasMore(data.length === LIMIT);
     } catch {
@@ -94,27 +103,35 @@ function HomeContent() {
     }
   }, []);
 
+  function buildParams(topic: string, sort: SortBy, source: string) {
+    const params = new URLSearchParams();
+    if (topic !== '전체') params.set('topic', topic);
+    if (sort !== 'crawled_date') params.set('sort', sort);
+    if (source) params.set('source', source);
+    return params.toString() ? `/?${params}` : '/';
+  }
+
   function handleTopicChange(topic: string) {
     setSelected(topic);
     sessionStorage.removeItem(SCROLL_KEY);
-    const params = new URLSearchParams();
-    if (topic !== '전체') params.set('topic', topic);
-    if (sortBy !== 'crawled_date') params.set('sort', sortBy);
-    router.replace(params.toString() ? `/?${params}` : '/');
+    router.replace(buildParams(topic, sortBy, sourceFilter));
   }
 
   function handleSortChange(sort: SortBy) {
     setSortBy(sort);
-    const params = new URLSearchParams();
-    if (selected !== '전체') params.set('topic', selected);
-    if (sort !== 'crawled_date') params.set('sort', sort);
-    router.replace(params.toString() ? `/?${params}` : '/');
+    router.replace(buildParams(selected, sort, sourceFilter));
+  }
+
+  function handleSourceChange(source: string) {
+    setSourceFilter(source);
+    sessionStorage.removeItem(SCROLL_KEY);
+    router.replace(buildParams(selected, sortBy, source));
   }
 
   useEffect(() => {
     setSkip(0);
-    load(selected, 0, false, sortBy);
-  }, [selected, sortBy, load]);
+    load(selected, 0, false, sortBy, sourceFilter);
+  }, [selected, sortBy, sourceFilter, load]);
 
   useEffect(() => {
     fetchTopicCounts().then(setTopicCounts).catch(() => {});
@@ -150,7 +167,7 @@ function HomeContent() {
   function handleLoadMore() {
     const nextSkip = skip + LIMIT;
     setSkip(nextSkip);
-    load(selected, nextSkip, true, sortBy);
+    load(selected, nextSkip, true, sortBy, sourceFilter);
   }
 
   const grouped = groupByDate(papers);
@@ -178,7 +195,7 @@ function HomeContent() {
 
       <TopicTabs topics={TOPICS} selected={selected} onChange={handleTopicChange} counts={topicCounts.counts} total={topicCounts.total} />
 
-      <div className="flex gap-2 mb-4 mt-3">
+      <div className="flex items-center gap-2 mt-3 mb-2">
         {SORT_OPTIONS.map(opt => (
           <button
             key={opt.value}
@@ -186,6 +203,21 @@ function HomeContent() {
             className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
               sortBy === opt.value
                 ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 mb-4">
+        {SOURCE_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => handleSourceChange(opt.value)}
+            className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
+              sourceFilter === opt.value
+                ? 'bg-gray-800 text-white'
                 : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
             }`}
           >

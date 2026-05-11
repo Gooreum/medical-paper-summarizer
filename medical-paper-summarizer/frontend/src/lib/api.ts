@@ -25,6 +25,7 @@ export async function fetchPapers(
   limit = 50,
   ids?: number[],
   sort?: string,
+  source?: string,
 ): Promise<Paper[]> {
   const params = new URLSearchParams();
   if (topic) params.set('topic', topic);
@@ -33,6 +34,7 @@ export async function fetchPapers(
   params.set('limit', String(limit));
   if (ids?.length) params.set('ids', ids.join(','));
   if (sort) params.set('sort', sort);
+  if (source) params.set('source', source);
   const res = await fetch(`${API_BASE}/api/papers?${params}`);
   if (!res.ok) throw new Error('Failed to fetch papers');
   const data = await res.json();
