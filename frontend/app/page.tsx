@@ -12,6 +12,13 @@ const TOPICS = ['근비대', '해부학', '자세교정', '영양학', '탈모�
 const LIMIT = 50;
 const SCROLL_KEY = 'home_scroll';
 
+type SortBy = 'crawled_date' | 'published_date' | 'citation_count';
+const SORT_OPTIONS: { value: SortBy; label: string }[] = [
+  { value: 'crawled_date', label: '최신 수집순' },
+  { value: 'published_date', label: '최신 발행순' },
+  { value: 'citation_count', label: '인용수 높은순' },
+];
+
 function groupByDate(papers: Paper[]): Record<string, Paper[]> {
   return papers.reduce(
     (acc, p) => {
@@ -49,6 +56,7 @@ function HomeContent() {
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [sortBy, setSortBy] = useState<SortBy>('crawled_date');
   const [topicCounts, setTopicCounts] = useState<{ total: number; counts: Record<string, number> }>({ total: 0, counts: {} });
   const scrollRestored = useRef(false);
 
@@ -68,12 +76,12 @@ function HomeContent() {
     });
   }, []);
 
-  const load = useCallback(async (topic: string, currentSkip: number, append = false) => {
+  const load = useCallback(async (topic: string, currentSkip: number, append = false, sort: SortBy = 'crawled_date') => {
     if (currentSkip === 0) setLoading(true);
     else setLoadingMore(true);
     try {
       const topicFilter = topic === '전체' ? undefined : topic;
-      const data = await fetchPapers(topicFilter, undefined, currentSkip, LIMIT);
+      const data = await fetchPapers(topicFilter, undefined, currentSkip, LIMIT, undefined, sort);
       setPapers((prev) => (append ? [...prev, ...data] : data));
       setHasMore(data.length === LIMIT);
     } catch {
@@ -94,8 +102,8 @@ function HomeContent() {
 
   useEffect(() => {
     setSkip(0);
-    load(selected, 0);
-  }, [selected, load]);
+    load(selected, 0, false, sortBy);
+  }, [selected, sortBy, load]);
 
   useEffect(() => {
     fetchTopicCounts().then(setTopicCounts).catch(() => {});
@@ -131,7 +139,7 @@ function HomeContent() {
   function handleLoadMore() {
     const nextSkip = skip + LIMIT;
     setSkip(nextSkip);
-    load(selected, nextSkip, true);
+    load(selected, nextSkip, true, sortBy);
   }
 
   const grouped = groupByDate(papers);
