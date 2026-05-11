@@ -18,6 +18,7 @@ def list_papers(
     ids: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
+    sort: str = "crawled_date",
     db: Session = Depends(get_db),
 ):
     query = db.query(Paper)
@@ -38,7 +39,12 @@ def list_papers(
             raise HTTPException(status_code=400, detail="date must be YYYY-MM-DD")
         query = query.filter(Paper.crawled_date == filter_date)
 
-    query = query.order_by(Paper.crawled_date.desc(), Paper.published_date.desc())
+    if sort == "published_date":
+        query = query.order_by(Paper.published_date.desc(), Paper.crawled_date.desc())
+    elif sort == "citation_count":
+        query = query.order_by(Paper.citation_count.desc(), Paper.published_date.desc())
+    else:
+        query = query.order_by(Paper.crawled_date.desc(), Paper.published_date.desc())
     total = query.count()
     papers = query.offset(skip).limit(limit).all()
 
