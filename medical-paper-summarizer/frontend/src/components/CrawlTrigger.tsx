@@ -114,7 +114,16 @@ export default function CrawlTrigger() {
 
       {/* 토픽 선택 */}
       <div>
-        <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">토픽</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">토픽</p>
+          <button
+            onClick={() => setSelectedTopics(selectedTopics.length === ALL_TOPICS.length ? [] : ALL_TOPICS)}
+            disabled={running}
+            className="text-xs text-blue-500 hover:text-blue-600 disabled:opacity-50"
+          >
+            {selectedTopics.length === ALL_TOPICS.length ? '전체 해제' : '전체 선택'}
+          </button>
+        </div>
         <div className="flex flex-wrap gap-2">
           {ALL_TOPICS.map(t => (
             <button
