@@ -22,14 +22,14 @@ export default function TopicTabs({ topics, selected, onChange, counts = {}, tot
               onClick={() => onChange(topic)}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium whitespace-nowrap rounded-full transition-all duration-150 shrink-0 ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-blue-500 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {topic}
               {count > 0 && (
                 <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                  isActive ? 'bg-blue-500 text-blue-100' : 'bg-gray-200 text-gray-500'
+                  isActive ? 'bg-blue-400 text-white' : 'bg-gray-200 text-gray-500'
                 }`}>
                   {count}
                 </span>

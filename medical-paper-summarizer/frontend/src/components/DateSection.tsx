@@ -15,7 +15,7 @@ export default function DateSection({ date, count, children }: Props) {
   return (
     <section className="mb-8">
       <div className="flex items-center gap-2.5 mb-4">
-        <span className="text-xs font-semibold text-gray-400 whitespace-nowrap">
+        <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
           {formatDate(date)}
         </span>
         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 shrink-0">

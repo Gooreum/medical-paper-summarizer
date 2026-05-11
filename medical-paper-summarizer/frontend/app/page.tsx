@@ -33,7 +33,7 @@ function groupByDate(papers: Paper[]): Record<string, Paper[]> {
 
 function SkeletonCard() {
   return (
-    <div className="border border-gray-200 rounded-lg p-4 animate-pulse bg-white">
+    <div className="rounded-2xl p-5 animate-pulse bg-white shadow-card">
       <div className="flex gap-2 mb-2">
         <div className="h-5 w-16 bg-gray-200 rounded-full" />
         <div className="h-5 w-16 bg-gray-100 rounded-full" />
@@ -166,7 +166,7 @@ function HomeContent() {
         <div className="flex items-center gap-3 mt-1">
           <Link
             href="/bookmarks"
-            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-gray-200 text-gray-400 hover:border-yellow-300 hover:text-yellow-500 transition-colors"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors font-medium"
           >
             ★ {bookmarks.size > 0 ? bookmarks.size : '북마크'}
           </Link>
@@ -183,10 +183,10 @@ function HomeContent() {
           <button
             key={opt.value}
             onClick={() => handleSortChange(opt.value)}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               sortBy === opt.value
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             {opt.label}
@@ -230,7 +230,7 @@ function HomeContent() {
               <button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingMore ? '로딩 중...' : '더 보기'}
               </button>
