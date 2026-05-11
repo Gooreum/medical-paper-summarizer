@@ -197,42 +197,52 @@ function HomeContent() {
 
       <TopicTabs topics={TOPICS} selected={selected} onChange={handleTopicChange} counts={topicCounts.counts} total={topicCounts.total} />
 
-      <div className="flex items-center gap-2 mt-3 mb-2">
-        {SORT_OPTIONS.map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => handleSortChange(opt.value)}
-            className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
-              sortBy === opt.value
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex items-center gap-2 mb-4">
-        {SOURCE_OPTIONS.map(opt => {
-          const count = opt.value === '' ? topicCounts.total : (sourceCounts[opt.value] ?? 0);
-          const isActive = sourceFilter === opt.value;
-          return (
-            <button
-              key={opt.value}
-              onClick={() => handleSourceChange(opt.value)}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
-                isActive ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-              }`}
-            >
-              {opt.label}
-              {count > 0 && (
-                <span className={`text-[11px] font-semibold ${isActive ? 'text-gray-300' : 'text-gray-400'}`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <div className="py-3 space-y-2.5 border-b border-gray-200 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium text-gray-400 w-7 shrink-0">정렬</span>
+          <div className="flex gap-1.5">
+            {SORT_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => handleSortChange(opt.value)}
+                className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                  sortBy === opt.value
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium text-gray-400 w-7 shrink-0">출처</span>
+          <div className="flex gap-1.5">
+            {SOURCE_OPTIONS.map(opt => {
+              const count = opt.value !== '' ? (sourceCounts[opt.value] ?? 0) : 0;
+              const isActive = sourceFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => handleSourceChange(opt.value)}
+                  className={`flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                    isActive
+                      ? 'bg-gray-800 text-white'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  {opt.label}
+                  {count > 0 && (
+                    <span className={`text-[11px] font-semibold ${isActive ? 'text-gray-400' : 'text-gray-400'}`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {loading ? (

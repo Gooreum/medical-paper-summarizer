@@ -23,7 +23,7 @@ export default function TopicTabs({ topics, selected, onChange, counts = {}, tot
               className={`flex items-center gap-1 px-3.5 py-1.5 text-[13px] font-medium whitespace-nowrap rounded-full transition-all duration-150 shrink-0 ${
                 isActive
                   ? 'bg-blue-500 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
               }`}
             >
               {topic}
