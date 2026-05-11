@@ -7,7 +7,7 @@ import { fetchPapers, type Paper } from '@/src/lib/api';
 
 function SkeletonCard() {
   return (
-    <div className="border border-gray-200 rounded-lg p-4 animate-pulse bg-white">
+    <div className="rounded-2xl p-5 animate-pulse bg-white shadow-card">
       <div className="flex gap-2 mb-2">
         <div className="h-5 w-16 bg-gray-200 rounded-full" />
         <div className="h-5 w-16 bg-gray-100 rounded-full" />

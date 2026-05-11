@@ -30,10 +30,10 @@ export default function BookmarkButton({ paperId }: { paperId: number }) {
   return (
     <button
       onClick={toggle}
-      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
         bookmarked
-          ? 'bg-yellow-50 border-yellow-300 text-yellow-600 hover:bg-yellow-100'
-          : 'bg-white border-gray-200 text-gray-500 hover:border-yellow-300 hover:text-yellow-500'
+          ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
+          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
       }`}
     >
       <span className="text-base">{bookmarked ? '★' : '☆'}</span>
