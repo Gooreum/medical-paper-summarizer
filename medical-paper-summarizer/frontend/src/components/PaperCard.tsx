@@ -10,8 +10,13 @@ type Props = {
 function extractOneLiner(summary: string | null): string {
   if (!summary) return '';
   const match = summary.match(/##\s*한 줄 핵심[^\n]*\n([\s\S]*?)(?=\n##|$)/);
-  if (match) return match[1].trim().slice(0, 120);
-  return summary.slice(0, 120);
+  const raw = match ? match[1] : summary;
+  return raw
+    .split('\n')
+    .filter(line => !/^-{3,}$/.test(line.trim()))
+    .join(' ')
+    .trim()
+    .slice(0, 120);
 }
 
 function formatAuthors(authors: string): string {
