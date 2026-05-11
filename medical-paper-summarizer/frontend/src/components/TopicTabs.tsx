@@ -11,7 +11,7 @@ type Props = {
 export default function TopicTabs({ topics, selected, onChange, counts = {}, total = 0 }: Props) {
   const all = ['전체', ...topics];
   return (
-    <div className="sticky top-0 z-10 bg-gray-100 pb-1">
+    <div className="bg-gray-100 pb-1">
       <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 scrollbar-hide">
         {all.map((topic) => {
           const isActive = selected === topic;
