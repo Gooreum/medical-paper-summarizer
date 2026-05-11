@@ -101,9 +101,12 @@ async def run_crawl_job(
         existing_dois = {row[0] for row in db_session.query(Paper.doi).filter(Paper.doi.isnot(None)).all()}
         existing_biorxiv_ids = {row[0] for row in db_session.query(Paper.arxiv_id).filter(Paper.arxiv_id.isnot(None)).all()}
 
-        for topic in topics:
+        db_lock = asyncio.Lock()
+
+        async def process_topic(topic: str) -> None:
             pubmed_papers = []
             biorxiv_papers = []
+            koreamed_papers = []
 
             if "pubmed" in sources:
                 _log(f"[{topic}] PubMed 검색 중...")
@@ -125,7 +128,6 @@ async def run_crawl_job(
                 except Exception as e:
                     _log(f"[{topic}] bioRxiv/medRxiv 실패 (스킵): {e}")
 
-            koreamed_papers = []
             if "koreamed" in sources:
                 _log(f"[{topic}] KoreaMed 검색 중...")
                 try:
@@ -137,13 +139,14 @@ async def run_crawl_job(
                     _log(f"[{topic}] KoreaMed 실패 (스킵): {e}")
 
             all_papers = pubmed_papers + biorxiv_papers + koreamed_papers
-
             saved_count = 0
+
             for idx, paper_dict in enumerate(all_papers, 1):
-                if paper_dict.get("doi") and paper_dict["doi"] in existing_dois:
-                    continue
-                if paper_dict.get("arxiv_id") and paper_dict["arxiv_id"] in existing_biorxiv_ids:
-                    continue
+                async with db_lock:
+                    if paper_dict.get("doi") and paper_dict["doi"] in existing_dois:
+                        continue
+                    if paper_dict.get("arxiv_id") and paper_dict["arxiv_id"] in existing_biorxiv_ids:
+                        continue
 
                 try:
                     full_text = (paper_dict.get("full_text", "") or "").replace("\x00", "")
@@ -157,40 +160,44 @@ async def run_crawl_job(
                     )
                     _log(f"[{topic}] [{source}] 요약 완료 ✓ {title[:50]}")
 
-                    paper = Paper(
-                        doi=paper_dict.get("doi"),
-                        arxiv_id=paper_dict.get("arxiv_id"),
-                        title=paper_dict["title"],
-                        authors=paper_dict.get("authors"),
-                        source=paper_dict.get("source"),
-                        topic=topic,
-                        url=paper_dict.get("url"),
-                        full_text=full_text,
-                        summary_ko=summary_ko,
-                        citation_count=paper_dict.get("citation_count", 0),
-                        published_date=paper_dict.get("published_date"),
-                        crawled_date=paper_dict.get("crawled_date"),
-                        model_used=summarizer.__class__.__name__,
-                        abstract_only=paper_dict.get("abstract_only", False),
-                    )
-                    db_session.add(paper)
-                    db_session.flush()
+                    async with db_lock:
+                        paper = Paper(
+                            doi=paper_dict.get("doi"),
+                            arxiv_id=paper_dict.get("arxiv_id"),
+                            title=paper_dict["title"],
+                            authors=paper_dict.get("authors"),
+                            source=paper_dict.get("source"),
+                            topic=topic,
+                            url=paper_dict.get("url"),
+                            full_text=full_text,
+                            summary_ko=summary_ko,
+                            citation_count=paper_dict.get("citation_count", 0),
+                            published_date=paper_dict.get("published_date"),
+                            crawled_date=paper_dict.get("crawled_date"),
+                            model_used=summarizer.__class__.__name__,
+                            abstract_only=paper_dict.get("abstract_only", False),
+                        )
+                        db_session.add(paper)
+                        db_session.flush()
 
-                    if paper_dict.get("doi"):
-                        existing_dois.add(paper_dict["doi"])
-                    if paper_dict.get("arxiv_id"):
-                        existing_biorxiv_ids.add(paper_dict["arxiv_id"])
+                        if paper_dict.get("doi"):
+                            existing_dois.add(paper_dict["doi"])
+                        if paper_dict.get("arxiv_id"):
+                            existing_biorxiv_ids.add(paper_dict["arxiv_id"])
 
                     saved_count += 1
                     crawl_status["results"].append({"topic": topic, "title": title})
                 except Exception as e:
-                    db_session.rollback()
+                    async with db_lock:
+                        db_session.rollback()
                     _log(f"[{topic}] [{source}] 저장 실패 (스킵): {title[:40]} — {e}")
                     continue
 
-            db_session.commit()
+            async with db_lock:
+                db_session.commit()
             _log(f"[{topic}] 완료 — {saved_count}편 저장됨")
 
+        await asyncio.gather(*[process_topic(t) for t in topics])
         _log(f"전체 완료 — 총 {len(crawl_status['results'])}편 수집")
     except Exception as e:
         _log(f"오류 발생: {e}")
