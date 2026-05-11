@@ -37,11 +37,14 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
   const preview = extractOneLiner(paper.summary_ko);
 
   return (
-    <div className="group relative border border-gray-200 rounded-xl p-5 hover:border-blue-200 hover:shadow-md transition-all duration-150 bg-white">
-      {/* 북마크 버튼 */}
+    <div className="group relative border border-gray-200 rounded-xl p-5 hover:border-blue-200 hover:shadow-md transition-all duration-150 bg-white cursor-pointer">
+      {/* 카드 전체 클릭 오버레이 */}
+      <Link href={`/papers/${paper.id}`} className="absolute inset-0 rounded-xl" aria-label={paper.title} />
+
+      {/* 북마크 버튼 — 오버레이 위 */}
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleBookmark?.(paper.id); }}
-        className={`absolute top-3 right-3 text-xl transition-colors ${
+        className={`relative z-10 absolute top-3 right-3 text-xl transition-colors ${
           isBookmarked ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'
         }`}
         aria-label="북마크"
@@ -50,7 +53,7 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
       </button>
 
       {/* 배지 행 */}
-      <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+      <div className="relative flex items-center gap-1.5 mb-3 flex-wrap">
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sourceBadgeColor}`}>
           {sourceLabel}
         </span>
@@ -65,21 +68,19 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
       </div>
 
       {/* 제목 */}
-      <Link href={`/papers/${paper.id}`} className="block group/title">
-        <h3 className="text-[15px] font-semibold text-gray-900 group-hover/title:text-blue-600 line-clamp-2 leading-snug mb-2 transition-colors">
-          {paper.title}
-        </h3>
-      </Link>
+      <h3 className="relative text-[15px] font-semibold text-gray-900 group-hover:text-blue-600 line-clamp-2 leading-snug mb-2 transition-colors">
+        {paper.title}
+      </h3>
 
       {/* 한 줄 핵심 */}
       {preview && (
-        <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed mb-3">
+        <p className="relative text-sm text-gray-500 line-clamp-2 leading-relaxed mb-3">
           {preview}
         </p>
       )}
 
       {/* 하단 메타 */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+      <div className="relative flex items-center justify-between pt-3 border-t border-gray-100">
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-xs text-gray-400 truncate">
             {formatAuthors(paper.authors)}
@@ -102,7 +103,7 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-0.5 text-blue-500 hover:text-blue-700 font-medium"
+            className="relative z-10 flex items-center gap-0.5 text-blue-500 hover:text-blue-700 font-medium"
           >
             원문
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
