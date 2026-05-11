@@ -19,12 +19,40 @@ const SECTION_ICONS: Record<string, string> = {
 function cleanBody(text: string): string {
   return text
     .split('\n')
-    .filter(line => !line.trimStart().startsWith('>'))  // blockquote 제거
-    .filter(line => !/^-{3,}$/.test(line.trim()))        // --- 제거
+    .filter(line => !line.trimStart().startsWith('>'))
+    .filter(line => !/^-{3,}$/.test(line.trim()))
     .join('\n')
-    .replace(/\*\*(.*?)\*\*/g, '$1')                    // **bold** → bold
-    .replace(/\*(.*?)\*/g, '$1')                        // *italic* → italic
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
     .trim();
+}
+
+function BodyRenderer({ body }: { body: string }) {
+  const lines = body.split('\n').filter(l => l.trim());
+  const hasBullets = lines.some(l => l.trimStart().startsWith('- '));
+
+  if (hasBullets) {
+    return (
+      <ul className="space-y-2.5">
+        {lines.map((line, i) => {
+          const isBullet = line.trimStart().startsWith('- ');
+          if (isBullet) {
+            return (
+              <li key={i} className="flex gap-2.5 text-[15px] text-gray-700 leading-[1.7]">
+                <span className="shrink-0 mt-[9px] w-1.5 h-1.5 rounded-full bg-gray-400" />
+                <span>{line.replace(/^\s*-\s*/, '')}</span>
+              </li>
+            );
+          }
+          return <p key={i} className="text-[15px] text-gray-700 leading-[1.7]">{line}</p>;
+        })}
+      </ul>
+    );
+  }
+
+  return (
+    <p className="text-[15px] text-gray-700 leading-[1.7] whitespace-pre-wrap">{body}</p>
+  );
 }
 
 function parseSections(summary: string): { heading: string; body: string }[] {
@@ -101,12 +129,22 @@ export default async function PaperDetailPage({ params }: Props) {
         <h1 className="text-xl font-bold text-gray-900 leading-snug mb-3">{paper.title}</h1>
 
         {/* 메타 */}
-        <p className="text-sm text-gray-500 mb-3 line-clamp-2">{paper.authors}</p>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
-          {paper.published_date && <span>📅 {paper.published_date}</span>}
-          {paper.citation_count > 0 && <span>📌 인용 {paper.citation_count}회</span>}
+        {paper.authors && (
+          <p className="text-[13px] text-gray-500 mb-2.5 line-clamp-2">{paper.authors}</p>
+        )}
+        <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-gray-400">
+          {paper.published_date && <span>{paper.published_date}</span>}
+          {paper.citation_count > 0 && (
+            <>
+              <span>·</span>
+              <span>인용 {paper.citation_count}회</span>
+            </>
+          )}
           {paper.full_text_length != null && paper.full_text_length > 0 && (
-            <span>📄 {paper.full_text_length.toLocaleString()}자</span>
+            <>
+              <span>·</span>
+              <span>{paper.full_text_length.toLocaleString()}자</span>
+            </>
           )}
         </div>
 
@@ -126,32 +164,32 @@ export default async function PaperDetailPage({ params }: Props) {
 
       {/* 한 줄 핵심 강조 박스 */}
       {highlightSection && (
-        <div className="bg-blue-50 rounded-2xl p-5 mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">💡</span>
-            <span className="text-sm font-semibold text-blue-500">한 줄 핵심</span>
+        <div className="bg-blue-50 rounded-2xl p-5 mb-5">
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <span className="text-base">💡</span>
+            <span className="text-[13px] font-semibold text-blue-500 uppercase tracking-wide">한 줄 핵심</span>
           </div>
-          <p className="text-gray-800 font-medium leading-relaxed">{highlightSection.body}</p>
+          <p className="text-[16px] text-gray-800 font-medium leading-[1.7]">{highlightSection.body}</p>
         </div>
       )}
 
       {/* 나머지 섹션들 */}
       {otherSections.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {otherSections.map((s, i) => (
-            <div key={i} className="bg-gray-50 rounded-2xl p-5">
+            <div key={i} className="bg-white rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">{SECTION_ICONS[s.heading] ?? '📝'}</span>
-                <h2 className="text-sm font-semibold text-gray-800">{s.heading}</h2>
+                <span className="text-base">{SECTION_ICONS[s.heading] ?? '📝'}</span>
+                <h2 className="text-[15px] font-semibold text-gray-900">{s.heading}</h2>
               </div>
-              <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{s.body}</div>
+              <BodyRenderer body={s.body} />
             </div>
           ))}
         </div>
       )}
 
       {sections.length === 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center text-sm text-gray-400">
+        <div className="bg-white rounded-2xl p-6 text-center text-[14px] text-gray-400">
           요약이 아직 생성되지 않았습니다.
         </div>
       )}
