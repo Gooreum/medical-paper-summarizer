@@ -7,8 +7,11 @@ import fitz
 import requests
 from bs4 import BeautifulSoup
 
+from app.crawlers.scihub_resolver import SciHubResolver
+
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; MedicalPaperSummarizer/1.0)"}
+_resolver = SciHubResolver()
 
 
 def fetch_from_url(url: str) -> dict:
@@ -126,12 +129,23 @@ def _fetch_pubmed(pmid: str, original_url: str) -> dict:
         except Exception:
             pass
 
+    if not full_text and doi:
+        pdf_bytes = _resolver.fetch_pdf_by_doi(doi)
+        if pdf_bytes:
+            try:
+                doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+                raw = "\n".join(page.get_text() for page in doc).strip()
+                if raw:
+                    full_text = raw[:45000]
+            except Exception:
+                pass
+
     if not full_text:
         if abstract:
             full_text = abstract
             abstract_only = True
         else:
-            raise ValueError(f"PubMed PMID {pmid}: 텍스트를 가져올 수 없습니다.")
+            raise ValueError(f"PubMed PMID {pmid}: 초록과 전문 모두 가져올 수 없습니다. 해당 논문은 오픈 액세스가 아닐 수 있습니다.")
 
     return {
         "title": title,

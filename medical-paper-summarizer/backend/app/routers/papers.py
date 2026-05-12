@@ -59,48 +59,13 @@ def list_papers(
     return PaperListResponse(papers=papers, total=total)
 
 
-@router.get("/papers/{paper_id}", response_model=PaperResponse)
-def get_paper(paper_id: int, db: Session = Depends(get_db)):
-    paper = db.query(Paper).filter(Paper.id == paper_id).first()
-    if not paper:
-        raise HTTPException(status_code=404, detail="Paper not found")
-    result = PaperResponse.model_validate(paper)
-    result.full_text_length = len(paper.full_text) if paper.full_text else 0
-    return result
-
-
-@router.get("/topics")
-def list_topics(db: Session = Depends(get_db)):
-    db_topics = db.query(Paper.topic).distinct().all()
-    db_topic_set = {row[0] for row in db_topics if row[0]}
-    all_topics = list(db_topic_set | set(TOPICS.keys()))
-    return {"topics": sorted(all_topics)}
-
-
-@router.get("/sources/counts")
-def source_counts(db: Session = Depends(get_db)):
-    from sqlalchemy import func
-    rows = db.query(Paper.source, func.count(Paper.id)).group_by(Paper.source).all()
-    counts = {source: count for source, count in rows if source}
-    total = sum(counts.values())
-    return {"total": total, "counts": counts}
-
-
-@router.get("/topics/counts")
-def topic_counts(db: Session = Depends(get_db)):
-    from sqlalchemy import func
-    rows = db.query(Paper.topic, func.count(Paper.id)).group_by(Paper.topic).all()
-    counts = {topic: count for topic, count in rows if topic}
-    total = sum(counts.values())
-    return {"total": total, "counts": counts}
-
-
 class SummarizeUrlRequest(BaseModel):
     url: str
     topic: str
     model: Optional[str] = None
 
 
+# Must be defined BEFORE /papers/{paper_id} to avoid path conflict
 @router.post("/papers/summarize-url", response_model=PaperResponse)
 def summarize_url(req: SummarizeUrlRequest, db: Session = Depends(get_db)):
     try:
@@ -152,3 +117,39 @@ def summarize_url(req: SummarizeUrlRequest, db: Session = Depends(get_db)):
     result = PaperResponse.model_validate(paper)
     result.full_text_length = len(paper.full_text) if paper.full_text else 0
     return result
+
+
+@router.get("/papers/{paper_id}", response_model=PaperResponse)
+def get_paper(paper_id: int, db: Session = Depends(get_db)):
+    paper = db.query(Paper).filter(Paper.id == paper_id).first()
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    result = PaperResponse.model_validate(paper)
+    result.full_text_length = len(paper.full_text) if paper.full_text else 0
+    return result
+
+
+@router.get("/topics")
+def list_topics(db: Session = Depends(get_db)):
+    db_topics = db.query(Paper.topic).distinct().all()
+    db_topic_set = {row[0] for row in db_topics if row[0]}
+    all_topics = list(db_topic_set | set(TOPICS.keys()))
+    return {"topics": sorted(all_topics)}
+
+
+@router.get("/sources/counts")
+def source_counts(db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    rows = db.query(Paper.source, func.count(Paper.id)).group_by(Paper.source).all()
+    counts = {source: count for source, count in rows if source}
+    total = sum(counts.values())
+    return {"total": total, "counts": counts}
+
+
+@router.get("/topics/counts")
+def topic_counts(db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    rows = db.query(Paper.topic, func.count(Paper.id)).group_by(Paper.topic).all()
+    counts = {topic: count for topic, count in rows if topic}
+    total = sum(counts.values())
+    return {"total": total, "counts": counts}
