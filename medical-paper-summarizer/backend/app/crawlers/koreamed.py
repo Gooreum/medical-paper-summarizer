@@ -169,10 +169,15 @@ class KoreMedCrawler:
         existing_ids: Set[str],
         max_papers: int = PAPERS_PER_TOPIC,
         on_progress: Optional[Callable[[str], None]] = None,
+        on_event: Optional[Callable[[dict], None]] = None,
     ) -> List[Dict]:
         def log(msg: str) -> None:
             if on_progress:
                 on_progress(msg)
+
+        def emit(evt: dict) -> None:
+            if on_event:
+                on_event(evt)
 
         keywords = TOPICS.get(topic, [topic])
         papers: List[Dict] = []
@@ -217,15 +222,18 @@ class KoreMedCrawler:
 
                         if not abstract:
                             log(f"[KoreaMed] 초록 없음, 스킵: {title[:50]}")
+                            emit({"type": "skipped", "source": "KoreaMed", "title": title, "reason": "초록 없음"})
                             continue
 
                         if not check_relevance(title, abstract, topic):
                             log(f"[KoreaMed] 관련도 낮음 스킵: {title[:50]}")
+                            emit({"type": "skipped", "source": "KoreaMed", "title": title, "reason": "관련도 낮음"})
                             continue
 
                         citations = get_citation_count(doi) if doi else 0
 
                         log(f"[KoreaMed] 수집 완료 (인용수 {citations}) [초록]: {title[:50]}")
+                        emit({"type": "collected", "source": "KoreaMed", "title": title, "reason": f"인용 {citations}회 [초록]"})
                         papers.append({
                             "doi": doi,
                             "arxiv_id": None,

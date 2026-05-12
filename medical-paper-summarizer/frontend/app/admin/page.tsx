@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import CrawlTrigger from '@/src/components/CrawlTrigger';
 import ScheduleSettings from '@/src/components/ScheduleSettings';
+import CrawlHistory from '@/src/components/CrawlHistory';
 import { getCrawlStatus } from '@/src/lib/api';
 
 const ADMIN_PASSWORD =
@@ -89,7 +90,7 @@ export default function AdminPage() {
         <CrawlTrigger />
       </section>
 
-      <section className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 bg-white dark:bg-gray-800">
+      <section className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6 bg-white dark:bg-gray-800">
         <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">크롤링 상태</h2>
         {status ? (
           <dl className="space-y-2 text-sm">
@@ -119,6 +120,11 @@ export default function AdminPage() {
         ) : (
           <p className="text-sm text-gray-400 dark:text-gray-500">상태를 불러오는 중...</p>
         )}
+      </section>
+
+      <section className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 bg-white dark:bg-gray-800">
+        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">크롤링 히스토리</h2>
+        <CrawlHistory />
       </section>
     </main>
   );

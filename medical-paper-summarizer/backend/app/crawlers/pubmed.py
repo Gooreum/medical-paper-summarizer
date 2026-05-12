@@ -53,10 +53,15 @@ class PubMedCrawler:
         existing_ids: Set[str],
         max_papers: int = PAPERS_PER_TOPIC,
         on_progress: Optional[Callable[[str], None]] = None,
+        on_event: Optional[Callable[[dict], None]] = None,
     ) -> List[Dict]:
         def log(msg: str) -> None:
             if on_progress:
                 on_progress(msg)
+
+        def emit(evt: dict) -> None:
+            if on_event:
+                on_event(evt)
 
         keywords = TOPICS.get(topic, [topic])
         papers: List[Dict] = []
@@ -108,12 +113,14 @@ class PubMedCrawler:
                         # 2) 관련도 체크 (PDF 전에)
                         if not check_relevance(title, abstract, topic):
                             log(f"[PubMed] 관련도 낮음 스킵: {title[:50]}")
+                            emit({"type": "skipped", "source": "pubmed", "title": title, "reason": "관련도 낮음"})
                             continue
 
                         # 3) 인용수 체크 (PDF 전에)
                         citations = get_citation_count(doi or title)
                         if citations < MIN_CITATIONS:
                             log(f"[PubMed] 스킵 (인용수 {citations} < {MIN_CITATIONS}): {title[:40]}")
+                            emit({"type": "skipped", "source": "pubmed", "title": title, "reason": f"인용수 부족 ({citations}회)"})
                             continue
 
                         # 4) PDF 다운로드 — 여기까지 통과한 논문만
@@ -165,9 +172,11 @@ class PubMedCrawler:
                                 log(f"[PubMed] 초록만 사용: {title[:50]}")
                             else:
                                 log(f"[PubMed] 텍스트 없음, 스킵: {title[:50]}")
+                                emit({"type": "skipped", "source": "pubmed", "title": title, "reason": "텍스트 없음"})
                                 continue
 
                         log(f"[PubMed] 수집 완료 (인용수 {citations}){' [초록]' if abstract_only else ''}: {title[:50]}")
+                        emit({"type": "collected", "source": "pubmed", "title": title, "reason": f"인용 {citations}회" + (" [초록]" if abstract_only else "")})
                         papers.append({
                             "doi": doi,
                             "arxiv_id": None,

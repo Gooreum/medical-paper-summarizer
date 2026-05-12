@@ -18,10 +18,15 @@ class BioRxivCrawler:
         existing_ids: Set[str],
         max_papers: int = PAPERS_PER_TOPIC,
         on_progress: Optional[Callable[[str], None]] = None,
+        on_event: Optional[Callable[[dict], None]] = None,
     ) -> List[Dict]:
         def log(msg: str) -> None:
             if on_progress:
                 on_progress(msg)
+
+        def emit(evt: dict) -> None:
+            if on_event:
+                on_event(evt)
 
         keywords = TOPICS.get(topic, [topic])
         papers: List[Dict] = []
@@ -72,6 +77,7 @@ class BioRxivCrawler:
                         # 관련도 체크 (PDF 전에)
                         if not check_relevance(title, abstract_text, topic):
                             log(f"[{source_label}] 관련도 낮음 스킵: {title[:50]}")
+                            emit({"type": "skipped", "source": source_label, "title": title, "reason": "관련도 낮음"})
                             continue
 
                         log(f"[{source_label}] PDF 다운로드 중: {title[:50]}")
@@ -85,6 +91,7 @@ class BioRxivCrawler:
                                 log(f"[{source_label}] 초록만 사용: {title[:50]}")
                             else:
                                 log(f"[{source_label}] 텍스트 없음, 스킵: {title[:50]}")
+                                emit({"type": "skipped", "source": source_label, "title": title, "reason": "텍스트 없음"})
                                 continue
                         else:
                             log(f"[{source_label}] PDF 파싱 완료: {title[:50]}")
@@ -107,6 +114,7 @@ class BioRxivCrawler:
                                     pass
 
                         log(f"[{source_label}] 수집 완료 (인용수 {citation_count}){' [초록]' if abstract_only else ''}: {title[:50]}")
+                        emit({"type": "collected", "source": source_label, "title": title, "reason": f"인용 {citation_count}회" + (" [초록]" if abstract_only else "")})
                         papers.append({
                             "doi": doi,
                             "arxiv_id": None,

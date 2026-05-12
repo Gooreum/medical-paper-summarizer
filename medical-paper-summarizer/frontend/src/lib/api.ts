@@ -100,3 +100,61 @@ export async function updateScheduleConfig(config: ScheduleConfig): Promise<Sche
   if (!res.ok) throw new Error('Failed to update schedule config');
   return res.json();
 }
+
+export type CrawlSessionSummary = {
+  id: number;
+  started_at: string;
+  finished_at: string | null;
+  status: 'running' | 'completed' | 'failed';
+  topics: string[];
+  sources: string[];
+  papers_per_topic: number;
+  total_saved: number;
+  total_skipped: number;
+  total_failed: number;
+};
+
+export type CrawlEventItem = {
+  id: number;
+  event_type: 'collected' | 'skipped' | 'summarized' | 'failed';
+  topic: string;
+  source: string;
+  title: string;
+  reason: string | null;
+  created_at: string | null;
+};
+
+export type CrawlHistoryListResponse = {
+  total: number;
+  page: number;
+  limit: number;
+  sessions: CrawlSessionSummary[];
+};
+
+export type CrawlHistoryDetailResponse = {
+  session: CrawlSessionSummary;
+  counts: Record<string, number>;
+  total: number;
+  page: number;
+  limit: number;
+  events: CrawlEventItem[];
+};
+
+export async function fetchCrawlHistory(page = 1, limit = 10): Promise<CrawlHistoryListResponse> {
+  const res = await fetch(`${API_BASE}/api/crawl/history?page=${page}&limit=${limit}`);
+  if (!res.ok) throw new Error('Failed to fetch crawl history');
+  return res.json();
+}
+
+export async function fetchCrawlHistoryDetail(
+  sessionId: number,
+  eventType = 'all',
+  page = 1,
+  limit = 50,
+): Promise<CrawlHistoryDetailResponse> {
+  const res = await fetch(
+    `${API_BASE}/api/crawl/history/${sessionId}?event_type=${eventType}&page=${page}&limit=${limit}`,
+  );
+  if (!res.ok) throw new Error('Failed to fetch crawl history detail');
+  return res.json();
+}
