@@ -65,6 +65,15 @@ class SummarizeUrlRequest(BaseModel):
     model: Optional[str] = None
 
 
+class SummarizeTextRequest(BaseModel):
+    title: str
+    text: str
+    topic: str
+    model: Optional[str] = None
+    authors: Optional[str] = None
+    url: Optional[str] = None
+
+
 # Must be defined BEFORE /papers/{paper_id} to avoid path conflict
 @router.post("/papers/summarize-url", response_model=PaperResponse)
 def summarize_url(req: SummarizeUrlRequest, db: Session = Depends(get_db)):
@@ -109,6 +118,47 @@ def summarize_url(req: SummarizeUrlRequest, db: Session = Depends(get_db)):
         crawled_date=date_cls.today(),
         model_used=model_name,
         abstract_only=paper_data.get("abstract_only", False),
+    )
+    db.add(paper)
+    db.commit()
+    db.refresh(paper)
+
+    result = PaperResponse.model_validate(paper)
+    result.full_text_length = len(paper.full_text) if paper.full_text else 0
+    return result
+
+
+@router.post("/papers/summarize-text", response_model=PaperResponse)
+def summarize_text(req: SummarizeTextRequest, db: Session = Depends(get_db)):
+    if len(req.text.strip()) < 100:
+        raise HTTPException(status_code=422, detail="텍스트가 너무 짧습니다. 최소 100자 이상 입력하세요.")
+
+    model_name = req.model or "sonnet"
+    summarizer = ClaudeCodeSummarizer(model=model_name)
+    try:
+        summary = summarizer.summarize(
+            full_text=req.text,
+            topic=req.topic,
+            title=req.title,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"요약 실패: {e}")
+
+    paper = Paper(
+        doi=None,
+        arxiv_id=None,
+        title=req.title,
+        authors=req.authors or "",
+        source="manual",
+        topic=req.topic,
+        url=req.url or "",
+        full_text=req.text,
+        summary_ko=summary,
+        citation_count=0,
+        published_date=None,
+        crawled_date=date_cls.today(),
+        model_used=model_name,
+        abstract_only=len(req.text) < 500,
     )
     db.add(paper)
     db.commit()
