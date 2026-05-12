@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -13,46 +13,42 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
+function applyClass(t: Theme) {
+  const root = window.document.documentElement;
+  if (t === 'dark') {
+    root.classList.add('dark');
+  } else if (t === 'light') {
+    root.classList.remove('dark');
+  } else {
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? root.classList.add('dark')
+      : root.classList.remove('dark');
+  }
+}
+
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('system');
 
   useEffect(() => {
     const saved = localStorage.getItem('theme') as Theme | null;
-    if (saved === 'light' || saved === 'dark' || saved === 'system') {
-      setThemeState(saved);
-      applyTheme(saved);
-    } else {
-      applyTheme('system');
-    }
+    const resolved = (saved === 'light' || saved === 'dark' || saved === 'system') ? saved : 'system';
+    setThemeState(resolved);
+    applyClass(resolved);
   }, []);
-
-  function applyTheme(t: Theme) {
-    const root = document.documentElement;
-    if (t === 'dark') {
-      root.classList.add('dark');
-    } else if (t === 'light') {
-      root.classList.remove('dark');
-    } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      prefersDark ? root.classList.add('dark') : root.classList.remove('dark');
-    }
-  }
-
-  function setTheme(t: Theme) {
-    setThemeState(t);
-    localStorage.setItem('theme', t);
-    applyTheme(t);
-  }
 
   useEffect(() => {
     if (theme !== 'system') return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => {
-      document.documentElement.classList.toggle('dark', e.matches);
-    };
+    const handler = () => applyClass('system');
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, [theme]);
+
+  const setTheme = useCallback((t: Theme) => {
+    setThemeState(t);
+    localStorage.setItem('theme', t);
+    applyClass(t);
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>

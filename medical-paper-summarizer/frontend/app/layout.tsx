@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   description: "AI-powered medical paper summarization",
 };
 
+// 렌더링 전에 올바른 클래스를 즉시 적용 — FOUC 방지
+const themeScript = `(function(){try{var s=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(s==='dark'||(s!=='light'&&d)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})()`;
+
 export default function RootLayout({
   children,
 }: {
@@ -14,6 +17,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <ThemeProvider>
           {children}
