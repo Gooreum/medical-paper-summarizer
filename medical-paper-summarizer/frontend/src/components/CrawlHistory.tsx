@@ -36,6 +36,16 @@ const EVENT_LABEL: Record<string, string> = {
   summarized: '요약완료', collected: '수집됨', skipped: '스킵됨', failed: '실패',
 };
 
+function pageRange(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | '...')[] = [1];
+  if (current > 3) pages.push('...');
+  for (let p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p++) pages.push(p);
+  if (current < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
 function formatDuration(start: string, end: string | null): string {
   if (!end) return '진행중';
   const s = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 1000);
@@ -141,22 +151,24 @@ function SessionDetail({ sessionId, onClose }: { sessionId: number; onClose: () 
 
         {/* 페이지네이션 */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <button
-              onClick={() => handlePage(page - 1)}
-              disabled={page === 1}
-              className="px-3 py-1 text-xs rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 disabled:opacity-40"
-            >
-              ← 이전
-            </button>
-            <span className="text-xs text-gray-500 dark:text-gray-400">{page} / {totalPages}</span>
-            <button
-              onClick={() => handlePage(page + 1)}
-              disabled={page === totalPages}
-              className="px-3 py-1 text-xs rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 disabled:opacity-40"
-            >
-              다음 →
-            </button>
+          <div className="flex items-center justify-center gap-1 mt-4">
+            {pageRange(page, totalPages).map((p, i) =>
+              p === '...' ? (
+                <span key={`dots-${i}`} className="w-7 h-7 flex items-center justify-center text-xs text-gray-400 dark:text-gray-500">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => handlePage(p as number)}
+                  className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
+                    p === page
+                      ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            )}
           </div>
         )}
       </div>
@@ -242,22 +254,24 @@ export default function CrawlHistory() {
 
       {/* 페이지네이션 */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-4">
-          <button
-            onClick={() => handlePage(page - 1)}
-            disabled={page === 1}
-            className="px-3 py-1.5 text-xs rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 disabled:opacity-40"
-          >
-            ← 이전
-          </button>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{page} / {totalPages} 페이지 (총 {total}건)</span>
-          <button
-            onClick={() => handlePage(page + 1)}
-            disabled={page === totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 disabled:opacity-40"
-          >
-            다음 →
-          </button>
+        <div className="flex items-center justify-center gap-1 mt-4">
+          {pageRange(page, totalPages).map((p, i) =>
+            p === '...' ? (
+              <span key={`dots-${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-gray-400 dark:text-gray-500">…</span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => handlePage(p as number)}
+                className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
+                  p === page
+                    ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                {p}
+              </button>
+            )
+          )}
         </div>
       )}
     </div>
