@@ -146,6 +146,19 @@ export async function fetchCrawlHistory(page = 1, limit = 10): Promise<CrawlHist
   return res.json();
 }
 
+export async function summarizeUrl(url: string, topic: string, model?: string): Promise<Paper> {
+  const res = await fetch(`${API_BASE}/api/papers/summarize-url`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, topic, model }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: '요청 실패' }));
+    throw new Error(err.detail || '요청 실패');
+  }
+  return res.json();
+}
+
 export async function fetchCrawlHistoryDetail(
   sessionId: number,
   eventType = 'all',

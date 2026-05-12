@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import CrawlTrigger from '@/src/components/CrawlTrigger';
 import ScheduleSettings from '@/src/components/ScheduleSettings';
 import CrawlHistory from '@/src/components/CrawlHistory';
+import UrlSummarizer from '@/src/components/UrlSummarizer';
 import { getCrawlStatus } from '@/src/lib/api';
 
 const ADMIN_PASSWORD =
@@ -88,6 +89,12 @@ export default function AdminPage() {
       <section className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6 bg-white dark:bg-gray-800">
         <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">수동 크롤링</h2>
         <CrawlTrigger />
+      </section>
+
+      <section className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6 bg-white dark:bg-gray-800">
+        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-1">URL 논문 요약</h2>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">PubMed, bioRxiv, medRxiv URL 또는 직접 PDF 링크를 입력하면 자동으로 가져와 요약합니다.</p>
+        <UrlSummarizer />
       </section>
 
       <section className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6 bg-white dark:bg-gray-800">

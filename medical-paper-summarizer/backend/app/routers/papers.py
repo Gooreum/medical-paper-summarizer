@@ -1,12 +1,16 @@
+from datetime import date as date_cls
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.crawlers.topics import TOPICS
+from app.crawlers.url_fetcher import fetch_from_url
 from app.database import get_db
 from app.models import Paper
 from app.schemas import PaperListResponse, PaperResponse
+from app.summarizers.claude_code import ClaudeCodeSummarizer
 
 router = APIRouter()
 
@@ -89,3 +93,62 @@ def topic_counts(db: Session = Depends(get_db)):
     counts = {topic: count for topic, count in rows if topic}
     total = sum(counts.values())
     return {"total": total, "counts": counts}
+
+
+class SummarizeUrlRequest(BaseModel):
+    url: str
+    topic: str
+    model: Optional[str] = None
+
+
+@router.post("/papers/summarize-url", response_model=PaperResponse)
+def summarize_url(req: SummarizeUrlRequest, db: Session = Depends(get_db)):
+    try:
+        paper_data = fetch_from_url(req.url)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"URL 가져오기 실패: {e}")
+
+    doi = paper_data.get("doi")
+    if doi:
+        existing = db.query(Paper).filter(Paper.doi == doi).first()
+        if existing:
+            r = PaperResponse.model_validate(existing)
+            r.full_text_length = len(existing.full_text) if existing.full_text else 0
+            return r
+
+    model_name = req.model or "sonnet"
+    summarizer = ClaudeCodeSummarizer(model=model_name)
+    try:
+        summary = summarizer.summarize(
+            full_text=paper_data["full_text"],
+            topic=req.topic,
+            title=paper_data["title"],
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"요약 실패: {e}")
+
+    paper = Paper(
+        doi=doi,
+        arxiv_id=None,
+        title=paper_data["title"],
+        authors=paper_data.get("authors", ""),
+        source=paper_data.get("source", "url"),
+        topic=req.topic,
+        url=paper_data.get("url", req.url),
+        full_text=paper_data["full_text"],
+        summary_ko=summary,
+        citation_count=0,
+        published_date=paper_data.get("published_date"),
+        crawled_date=date_cls.today(),
+        model_used=model_name,
+        abstract_only=paper_data.get("abstract_only", False),
+    )
+    db.add(paper)
+    db.commit()
+    db.refresh(paper)
+
+    result = PaperResponse.model_validate(paper)
+    result.full_text_length = len(paper.full_text) if paper.full_text else 0
+    return result
