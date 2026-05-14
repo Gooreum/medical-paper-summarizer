@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 
 from app.crawlers.topics import TOPICS
 from app.crawlers.url_fetcher import fetch_from_url
@@ -26,7 +26,7 @@ def list_papers(
     sort: str = "crawled_date",
     db: Session = Depends(get_db),
 ):
-    query = db.query(Paper)
+    query = db.query(Paper).options(defer(Paper.full_text))
 
     if topic:
         query = query.filter(Paper.topic == topic)
