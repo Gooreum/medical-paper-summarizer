@@ -95,8 +95,8 @@ function HomeContent() {
     try {
       const topicFilter = topic === '전체' ? undefined : topic;
       const data = await fetchPapers(topicFilter, undefined, currentSkip, LIMIT, undefined, sort, source || undefined);
-      setPapers((prev) => (append ? [...prev, ...data] : data));
-      setHasMore(data.length === LIMIT);
+      setPapers((prev) => (append ? [...prev, ...data.papers] : data.papers));
+      setHasMore(currentSkip + data.papers.length < data.total);
     } catch {
       // keep existing state on error
     } finally {

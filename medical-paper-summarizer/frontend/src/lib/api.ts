@@ -26,7 +26,7 @@ export async function fetchPapers(
   ids?: number[],
   sort?: string,
   source?: string,
-): Promise<Paper[]> {
+): Promise<{ papers: Paper[]; total: number }> {
   const params = new URLSearchParams();
   if (topic) params.set('topic', topic);
   if (date) params.set('date', date);
@@ -38,7 +38,7 @@ export async function fetchPapers(
   const res = await fetch(`${API_BASE}/api/papers?${params}`);
   if (!res.ok) throw new Error('Failed to fetch papers');
   const data = await res.json();
-  return data.papers ?? data;
+  return { papers: data.papers ?? [], total: data.total ?? 0 };
 }
 
 export async function fetchPaper(id: number): Promise<Paper> {

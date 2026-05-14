@@ -49,7 +49,7 @@ export default function BookmarksPage() {
       return;
     }
     fetchPapers(undefined, undefined, 0, 200, ids)
-      .then(data => setPapers(data))
+      .then(data => setPapers(data.papers))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
