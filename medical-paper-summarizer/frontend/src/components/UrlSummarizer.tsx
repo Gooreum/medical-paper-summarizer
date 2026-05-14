@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { summarizeUrl, summarizeText } from '@/src/lib/api';
 
@@ -195,9 +196,9 @@ export default function UrlSummarizer() {
         <div className="mt-4 p-4 rounded-xl bg-green-50 dark:bg-green-900/20">
           <p className="text-sm font-medium text-green-700 dark:text-green-400 mb-1">요약 완료!</p>
           <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 line-clamp-2">{result.title}</p>
-          <a href={`/papers/${result.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-blue-500 hover:text-blue-600">
+          <Link href={`/papers/${result.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-blue-500 hover:text-blue-600">
             논문 보기 →
-          </a>
+          </Link>
         </div>
       )}
     </div>

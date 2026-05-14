@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import CrawlTrigger from '@/src/components/CrawlTrigger';
 import ScheduleSettings from '@/src/components/ScheduleSettings';
@@ -76,9 +77,9 @@ export default function AdminPage() {
     <main className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">관리자</h1>
-        <a href="/" className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
+        <Link href="/" className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
           ← 목록으로
-        </a>
+        </Link>
       </div>
 
       <section className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6 bg-white dark:bg-gray-800">

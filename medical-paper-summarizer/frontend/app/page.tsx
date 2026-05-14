@@ -191,9 +191,9 @@ function HomeContent() {
           >
             ★ {bookmarks.size > 0 ? bookmarks.size : '저장'}
           </Link>
-          <a href="/admin" className="text-[12px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
+          <Link href="/admin" className="text-[12px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
             관리자
-          </a>
+          </Link>
         </div>
       </div>
 
