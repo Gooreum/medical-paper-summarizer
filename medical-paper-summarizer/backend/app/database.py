@@ -20,3 +20,17 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def run_migrations():
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        stmts = [
+            "CREATE INDEX IF NOT EXISTS ix_papers_crawled_date ON papers (crawled_date)",
+            "CREATE INDEX IF NOT EXISTS ix_papers_published_date ON papers (published_date)",
+            "CREATE INDEX IF NOT EXISTS ix_papers_citation_count ON papers (citation_count)",
+            "CREATE INDEX IF NOT EXISTS ix_papers_source ON papers (source)",
+        ]
+        for stmt in stmts:
+            conn.execute(text(stmt))
+        conn.commit()

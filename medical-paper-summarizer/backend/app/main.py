@@ -9,6 +9,8 @@ from app.database import Base, engine
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    from app.database import run_migrations
+    run_migrations()
     from app.scheduler import start_scheduler
     start_scheduler(app)
     yield

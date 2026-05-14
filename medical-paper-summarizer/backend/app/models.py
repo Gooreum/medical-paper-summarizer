@@ -28,6 +28,10 @@ class Paper(Base):
     __table_args__ = (
         UniqueConstraint("doi", name="uq_papers_doi"),
         UniqueConstraint("arxiv_id", name="uq_papers_arxiv_id"),
+        Index("ix_papers_crawled_date", "crawled_date"),
+        Index("ix_papers_published_date", "published_date"),
+        Index("ix_papers_citation_count", "citation_count"),
+        Index("ix_papers_source", "source"),
     )
 
 
