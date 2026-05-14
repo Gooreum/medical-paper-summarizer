@@ -55,7 +55,12 @@ async def trigger_crawl(
 
 @router.get("/crawl/status")
 def get_crawl_status():
-    return crawl_status
+    return {
+        "running": crawl_status["running"],
+        "progress": crawl_status["progress"],
+        "started_at": crawl_status["started_at"],
+        "results": len(crawl_status["results"]),
+    }
 
 
 @router.get("/crawl/stream")
