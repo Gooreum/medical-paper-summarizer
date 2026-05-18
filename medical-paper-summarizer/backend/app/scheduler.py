@@ -27,6 +27,7 @@ async def daily_crawl():
             papers_per_topic=config.get("papers_per_topic", 5),
             sources=config.get("sources"),
             model=config.get("model"),
+            min_citation_count=config.get("min_citation_count", 0),
         )
     finally:
         db.close()

@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from app.crawlers.semantic_scholar import get_citation_count
-from app.crawlers.topics import PAPERS_PER_TOPIC, TOPICS
+from app.crawlers.topics import PAPERS_PER_TOPIC, get_koreamed_keywords
 from app.summarizers.claude_code import check_relevance
 
 BASE = "https://www.koreamed.org"
@@ -179,7 +179,7 @@ class KoreMedCrawler:
             if on_event:
                 on_event(evt)
 
-        keywords = TOPICS.get(topic, [topic])
+        keywords = get_koreamed_keywords(topic)
         papers: List[Dict] = []
         seen_ids: Set[str] = set()
 
@@ -220,20 +220,21 @@ class KoreMedCrawler:
                             abstract = _fetch_abstract(kmid)
                             time.sleep(0.4)
 
+                        _kmid_url = f"{BASE}/SearchBasic.php?RID={kmid}"
                         if not abstract:
                             log(f"[KoreaMed] 초록 없음, 스킵: {title[:50]}")
-                            emit({"type": "skipped", "source": "KoreaMed", "title": title, "reason": "초록 없음"})
+                            emit({"type": "skipped", "source": "KoreaMed", "title": title, "reason": "초록 없음", "url": _kmid_url})
                             continue
 
                         if not check_relevance(title, abstract, topic):
                             log(f"[KoreaMed] 관련도 낮음 스킵: {title[:50]}")
-                            emit({"type": "skipped", "source": "KoreaMed", "title": title, "reason": "관련도 낮음"})
+                            emit({"type": "skipped", "source": "KoreaMed", "title": title, "reason": "관련도 낮음", "url": _kmid_url})
                             continue
 
                         citations = get_citation_count(doi) if doi else 0
 
                         log(f"[KoreaMed] 수집 완료 (인용수 {citations}) [초록]: {title[:50]}")
-                        emit({"type": "collected", "source": "KoreaMed", "title": title, "reason": f"인용 {citations}회 [초록]"})
+                        emit({"type": "collected", "source": "KoreaMed", "title": title, "reason": f"인용 {citations}회 [초록]", "url": _kmid_url})
                         papers.append({
                             "doi": doi,
                             "arxiv_id": None,

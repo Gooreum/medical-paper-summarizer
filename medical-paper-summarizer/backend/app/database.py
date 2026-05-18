@@ -34,3 +34,14 @@ def run_migrations():
         for stmt in stmts:
             conn.execute(text(stmt))
         conn.commit()
+
+        # nullable column additions — SQLite ignores duplicate column errors
+        for stmt in [
+            "ALTER TABLE crawl_events ADD COLUMN paper_id INTEGER",
+            "ALTER TABLE crawl_events ADD COLUMN url TEXT",
+        ]:
+            try:
+                conn.execute(text(stmt))
+                conn.commit()
+            except Exception:
+                pass  # column already exists

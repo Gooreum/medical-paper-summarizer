@@ -112,6 +112,19 @@ export default function ScheduleSettings() {
         <span className="text-xs text-gray-400 dark:text-gray-500">편 (최대 20)</span>
       </div>
 
+      {/* 최소 인용수 */}
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-20 shrink-0">최소 인용수</span>
+        <input
+          type="number"
+          min={0}
+          value={config.min_citation_count}
+          onChange={e => setConfig(c => c ? { ...c, min_citation_count: Math.max(0, Number(e.target.value)) } : c)}
+          className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-sm w-20 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+        />
+        <span className="text-xs text-gray-400 dark:text-gray-500">0 = 제한 없음 (PubMed에 유효)</span>
+      </div>
+
       {/* 수집 소스 */}
       <div>
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">수집 소스</span>

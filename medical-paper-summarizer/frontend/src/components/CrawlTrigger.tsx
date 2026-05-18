@@ -24,6 +24,7 @@ export default function CrawlTrigger() {
   const [selectedTopics, setSelectedTopics] = useState<string[]>(ALL_TOPICS);
   const [selectedSources, setSelectedSources] = useState<string[]>(['pubmed', 'biorxiv']);
   const [papersPerTopic, setPapersPerTopic] = useState(5);
+  const [minCitationCount, setMinCitationCount] = useState(0);
   const [autoScroll, setAutoScroll] = useState(true);
   const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
   const esRef = useRef<EventSource | null>(null);
@@ -52,7 +53,7 @@ export default function CrawlTrigger() {
     setLogs(['크롤링 시작...']);
 
     try {
-      await triggerCrawl(selectedTopics, papersPerTopic, selectedSources, selectedModel);
+      await triggerCrawl(selectedTopics, papersPerTopic, selectedSources, selectedModel, minCitationCount);
     } catch {
       // 409 = already running
     }
@@ -162,19 +163,33 @@ export default function CrawlTrigger() {
         </div>
       </div>
 
-      {/* 토픽당 논문 수 */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm text-gray-600 dark:text-gray-300">토픽당 논문 수</label>
-        <input
-          type="number"
-          min={1}
-          max={20}
-          value={papersPerTopic}
-          onChange={e => setPapersPerTopic(Math.max(1, Math.min(20, Number(e.target.value))))}
-          disabled={running}
-          className="w-16 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-        />
-        <span className="text-xs text-gray-400 dark:text-gray-500">최대 20</span>
+      {/* 토픽당 논문 수 + 최소 인용수 */}
+      <div className="flex flex-wrap items-center gap-5">
+        <div className="flex items-center gap-3">
+          <label className="text-sm text-gray-600 dark:text-gray-300">토픽당 논문 수</label>
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={papersPerTopic}
+            onChange={e => setPapersPerTopic(Math.max(1, Math.min(20, Number(e.target.value))))}
+            disabled={running}
+            className="w-16 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
+          <span className="text-xs text-gray-400 dark:text-gray-500">최대 20</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="text-sm text-gray-600 dark:text-gray-300">최소 인용수</label>
+          <input
+            type="number"
+            min={0}
+            value={minCitationCount}
+            onChange={e => setMinCitationCount(Math.max(0, Number(e.target.value)))}
+            disabled={running}
+            className="w-20 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
+          <span className="text-xs text-gray-400 dark:text-gray-500">0 = 제한 없음</span>
+        </div>
       </div>
 
       {/* 크롤링 버튼 */}

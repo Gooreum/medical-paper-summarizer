@@ -11,6 +11,7 @@ export type Paper = {
   published_date: string;
   crawled_date: string;
   summary_ko: string | null;
+  summary_one_liner?: string | null;
   model_used: string | null;
   doi?: string | null;
   arxiv_id?: string | null;
@@ -42,16 +43,16 @@ export async function fetchPapers(
 }
 
 export async function fetchPaper(id: number): Promise<Paper> {
-  const res = await fetch(`${API_BASE}/api/papers/${id}`);
+  const res = await fetch(`${API_BASE}/api/papers/${id}`, { next: { revalidate: 3600 } });
   if (!res.ok) throw new Error('Paper not found');
   return res.json();
 }
 
-export async function triggerCrawl(topics?: string[], papersPerTopic?: number, sources?: string[], model?: string): Promise<unknown> {
+export async function triggerCrawl(topics?: string[], papersPerTopic?: number, sources?: string[], model?: string, minCitationCount?: number): Promise<unknown> {
   const res = await fetch(`${API_BASE}/api/crawl/trigger`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ topics, papers_per_topic: papersPerTopic, sources, model }),
+    body: JSON.stringify({ topics, papers_per_topic: papersPerTopic, sources, model, min_citation_count: minCitationCount ?? 0 }),
   });
   if (!res.ok && res.status !== 409) throw new Error('Failed to trigger crawl');
   return res.json();
@@ -83,6 +84,7 @@ export type ScheduleConfig = {
   papers_per_topic: number;
   sources: string[];
   model: string | null;
+  min_citation_count: number;
 };
 
 export async function getScheduleConfig(): Promise<ScheduleConfig> {
@@ -122,6 +124,8 @@ export type CrawlEventItem = {
   title: string;
   reason: string | null;
   created_at: string | null;
+  paper_id?: number | null;
+  url?: string | null;
 };
 
 export type CrawlHistoryListResponse = {
@@ -153,11 +157,12 @@ export async function summarizeText(
   model?: string,
   authors?: string,
   url?: string,
+  citationCount?: number,
 ): Promise<Paper> {
   const res = await fetch(`${API_BASE}/api/papers/summarize-text`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, text, topic, model, authors, url }),
+    body: JSON.stringify({ title, text, topic, model, authors, url, citation_count: citationCount ?? null }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: '요청 실패' }));
@@ -166,11 +171,11 @@ export async function summarizeText(
   return res.json();
 }
 
-export async function summarizeUrl(url: string, topic: string, model?: string): Promise<Paper> {
+export async function summarizeUrl(url: string, topic: string, model?: string, citationCount?: number): Promise<Paper> {
   const res = await fetch(`${API_BASE}/api/papers/summarize-url`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url, topic, model }),
+    body: JSON.stringify({ url, topic, model, citation_count: citationCount ?? null }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: '요청 실패' }));

@@ -3,11 +3,16 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import useSWR from 'swr';
 import TopicTabs from '@/src/components/TopicTabs';
 import DateSection from '@/src/components/DateSection';
 import PaperCard from '@/src/components/PaperCard';
 import ThemeToggle from '@/src/components/ThemeToggle';
 import { fetchPapers, fetchTopicCounts, fetchSourceCounts, type Paper } from '@/src/lib/api';
+
+// Module-level cache: survives component unmount/remount (back-navigation)
+const _papersCache = new Map<string, { papers: Paper[]; total: number; ts: number }>();
+const PAPERS_TTL = 60_000;
 
 const TOPICS = ['근비대', '해부학', '자세교정', '영양학', '탈모치료', '노화', '웨이트 트레이닝', '수면', '다이어트'];
 const LIMIT = 50;
@@ -69,9 +74,12 @@ function HomeContent() {
   const [sortBy, setSortBy] = useState<SortBy>(sortParam);
   const rawSource = searchParams.get('source') || '';
   const [sourceFilter, setSourceFilter] = useState(rawSource);
-  const [topicCounts, setTopicCounts] = useState<{ total: number; counts: Record<string, number> }>({ total: 0, counts: {} });
-  const [sourceCounts, setSourceCounts] = useState<Record<string, number>>({});
+  const { data: topicData } = useSWR('topicCounts', fetchTopicCounts, { revalidateOnFocus: false, dedupingInterval: 300_000 });
+  const { data: sourceData } = useSWR('sourceCounts', fetchSourceCounts, { revalidateOnFocus: false, dedupingInterval: 300_000 });
+  const topicCounts = topicData ?? { total: 0, counts: {} };
+  const sourceCounts = sourceData?.counts ?? {};
   const scrollRestored = useRef(false);
+  const [navTo, setNavTo] = useState<string | null>(null);
 
   const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
 
@@ -90,11 +98,25 @@ function HomeContent() {
   }, []);
 
   const load = useCallback(async (topic: string, currentSkip: number, append = false, sort: SortBy = 'crawled_date', source = '') => {
-    if (currentSkip === 0) setLoading(true);
-    else setLoadingMore(true);
+    const cacheKey = `${topic}|${sort}|${source}`;
+    if (currentSkip === 0 && !append) {
+      const cached = _papersCache.get(cacheKey);
+      if (cached && Date.now() - cached.ts < PAPERS_TTL) {
+        setPapers(cached.papers);
+        setHasMore(cached.papers.length < cached.total);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     try {
       const topicFilter = topic === '전체' ? undefined : topic;
       const data = await fetchPapers(topicFilter, undefined, currentSkip, LIMIT, undefined, sort, source || undefined);
+      if (currentSkip === 0) {
+        _papersCache.set(cacheKey, { ...data, ts: Date.now() });
+      }
       setPapers((prev) => (append ? [...prev, ...data.papers] : data.papers));
       setHasMore(currentSkip + data.papers.length < data.total);
     } catch {
@@ -134,11 +156,6 @@ function HomeContent() {
     setSkip(0);
     load(selected, 0, false, sortBy, sourceFilter);
   }, [selected, sortBy, sourceFilter, load]);
-
-  useEffect(() => {
-    fetchTopicCounts().then(setTopicCounts).catch(() => {});
-    fetchSourceCounts().then(d => setSourceCounts(d.counts)).catch(() => {});
-  }, []);
 
   useEffect(() => {
     const saveScroll = () => {
@@ -187,12 +204,21 @@ function HomeContent() {
           <ThemeToggle />
           <Link
             href="/bookmarks"
+            onClick={() => setNavTo('bookmarks')}
             className="flex items-center gap-1 text-[12px] px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium"
           >
-            ★ {bookmarks.size > 0 ? bookmarks.size : '저장'}
+            {navTo === 'bookmarks'
+              ? <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              : <>★ {bookmarks.size > 0 ? bookmarks.size : '저장'}</>}
           </Link>
-          <Link href="/admin" className="text-[12px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
-            관리자
+          <Link
+            href="/admin"
+            onClick={() => setNavTo('admin')}
+            className="text-[12px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            {navTo === 'admin'
+              ? <span className="inline-block w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              : '관리자'}
           </Link>
         </div>
       </div>

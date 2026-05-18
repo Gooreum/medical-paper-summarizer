@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Set
 import fitz
 import requests
 
-from app.crawlers.topics import PAPERS_PER_TOPIC, TOPICS
+from app.crawlers.topics import PAPERS_PER_TOPIC, get_keywords
 from app.summarizers.claude_code import check_relevance
 
 EUROPEPMC_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
@@ -28,7 +28,7 @@ class BioRxivCrawler:
             if on_event:
                 on_event(evt)
 
-        keywords = TOPICS.get(topic, [topic])
+        keywords = get_keywords(topic)
         papers: List[Dict] = []
         seen_dois: Set[str] = set()
 
@@ -74,10 +74,11 @@ class BioRxivCrawler:
                         server = "medrxiv" if is_medrxiv else "biorxiv"
                         source_label = "medRxiv" if is_medrxiv else "bioRxiv"
 
+                        _doi_url = f"https://doi.org/{doi}"
                         # 관련도 체크 (PDF 전에)
                         if not check_relevance(title, abstract_text, topic):
                             log(f"[{source_label}] 관련도 낮음 스킵: {title[:50]}")
-                            emit({"type": "skipped", "source": source_label, "title": title, "reason": "관련도 낮음"})
+                            emit({"type": "skipped", "source": source_label, "title": title, "reason": "관련도 낮음", "url": _doi_url})
                             continue
 
                         log(f"[{source_label}] PDF 다운로드 중: {title[:50]}")
@@ -91,7 +92,7 @@ class BioRxivCrawler:
                                 log(f"[{source_label}] 초록만 사용: {title[:50]}")
                             else:
                                 log(f"[{source_label}] 텍스트 없음, 스킵: {title[:50]}")
-                                emit({"type": "skipped", "source": source_label, "title": title, "reason": "텍스트 없음"})
+                                emit({"type": "skipped", "source": source_label, "title": title, "reason": "텍스트 없음", "url": _doi_url})
                                 continue
                         else:
                             log(f"[{source_label}] PDF 파싱 완료: {title[:50]}")
@@ -114,7 +115,7 @@ class BioRxivCrawler:
                                     pass
 
                         log(f"[{source_label}] 수집 완료 (인용수 {citation_count}){' [초록]' if abstract_only else ''}: {title[:50]}")
-                        emit({"type": "collected", "source": source_label, "title": title, "reason": f"인용 {citation_count}회" + (" [초록]" if abstract_only else "")})
+                        emit({"type": "collected", "source": source_label, "title": title, "reason": f"인용 {citation_count}회" + (" [초록]" if abstract_only else ""), "url": _doi_url})
                         papers.append({
                             "doi": doi,
                             "arxiv_id": None,

@@ -12,6 +12,7 @@ DEFAULT_CONFIG = {
     "papers_per_topic": 5,
     "sources": ["pubmed", "biorxiv"],
     "model": None,
+    "min_citation_count": 0,
 }
 
 

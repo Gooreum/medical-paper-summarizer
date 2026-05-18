@@ -61,6 +61,8 @@ class CrawlEvent(Base):
     source = Column(String)
     title = Column(String)
     reason = Column(String, nullable=True)  # skip/fail reason
+    paper_id = Column(Integer, nullable=True)  # set for summarized events
+    url = Column(String, nullable=True)         # source URL for re-summarization
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (

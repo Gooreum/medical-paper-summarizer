@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import {
   fetchCrawlHistory,
   fetchCrawlHistoryDetail,
+  summarizeUrl,
   type CrawlSessionSummary,
   type CrawlEventItem,
   type CrawlHistoryDetailResponse,
@@ -64,6 +66,8 @@ function SessionDetail({ sessionId, onClose }: { sessionId: number; onClose: () 
   const [detail, setDetail] = useState<CrawlHistoryDetailResponse | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [page, setPage] = useState(1);
+  // value: 'loading' | paper_id (number) | error message (string)
+  const [resuResults, setResuResults] = useState<Map<number, 'loading' | number | string>>(new Map());
   const LIMIT = 50;
 
   const load = useCallback(async (tab: string, p: number) => {
@@ -83,6 +87,18 @@ function SessionDetail({ sessionId, onClose }: { sessionId: number; onClose: () 
   function handlePage(p: number) {
     setPage(p);
     load(activeTab, p);
+  }
+
+  async function handleReSummarize(evt: CrawlEventItem) {
+    if (!evt.url) return;
+    setResuResults(m => new Map(m).set(evt.id, 'loading'));
+    try {
+      const paper = await summarizeUrl(evt.url, evt.topic);
+      setResuResults(m => new Map(m).set(evt.id, paper.id));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '요약 실패';
+      setResuResults(m => new Map(m).set(evt.id, msg));
+    }
   }
 
   if (!detail) {
@@ -131,21 +147,81 @@ function SessionDetail({ sessionId, onClose }: { sessionId: number; onClose: () 
         {events.length === 0 ? (
           <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">항목 없음</p>
         ) : (
-          <div className="space-y-1.5 mt-2">
-            {events.map(evt => (
-              <div key={evt.id} className="flex items-start gap-2.5 text-[13px]">
-                <span className={`shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[11px] font-medium ${EVENT_BADGE[evt.event_type] ?? ''}`}>
-                  {EVENT_LABEL[evt.event_type] ?? evt.event_type}
-                </span>
-                <div className="min-w-0">
-                  <span className="text-gray-800 dark:text-gray-200 leading-snug">{evt.title}</span>
-                  <span className="ml-1.5 text-[11px] text-gray-400 dark:text-gray-500">
-                    [{evt.source}] {evt.topic}
-                    {evt.reason && ` · ${evt.reason}`}
-                  </span>
+          <div className="space-y-2 mt-2">
+            {events.map(evt => {
+              const resuState = resuResults.get(evt.id);
+              // 이미 요약된 건 재요약 불필요, 나머지는 URL 있으면 요약 가능
+              const canAction = evt.event_type !== 'summarized' && !!evt.url;
+              const isError = typeof resuState === 'string';
+              return (
+                <div key={evt.id} className="text-[13px]">
+                  <div className="flex items-start gap-2.5">
+                    <span className={`shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[11px] font-medium ${EVENT_BADGE[evt.event_type] ?? ''}`}>
+                      {EVENT_LABEL[evt.event_type] ?? evt.event_type}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      {evt.event_type === 'summarized' && evt.paper_id ? (
+                        <Link
+                          href={`/papers/${evt.paper_id}`}
+                          className="text-blue-600 dark:text-blue-400 hover:underline leading-snug"
+                        >
+                          {evt.title}
+                        </Link>
+                      ) : (
+                        <span className="text-gray-800 dark:text-gray-200 leading-snug">{evt.title}</span>
+                      )}
+                      <span className="ml-1.5 text-[11px] text-gray-400 dark:text-gray-500">
+                        [{evt.source}] {evt.topic}
+                        {evt.reason && ` · ${evt.reason}`}
+                      </span>
+                    </div>
+                    {/* 원문보기 */}
+                    {evt.url && (
+                      <a
+                        href={evt.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 text-[11px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        원문 ↗
+                      </a>
+                    )}
+                    {/* 요약 액션 */}
+                    {canAction && (
+                      resuState === 'loading' ? (
+                        <span className="shrink-0 text-[11px] text-gray-400 dark:text-gray-500 animate-pulse">요약 중...</span>
+                      ) : typeof resuState === 'number' ? (
+                        <Link
+                          href={`/papers/${resuState}`}
+                          className="shrink-0 text-[11px] font-medium text-green-600 dark:text-green-400 hover:underline"
+                        >
+                          보기 →
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => handleReSummarize(evt)}
+                          className="shrink-0 text-[11px] px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                        >
+                          요약
+                        </button>
+                      )
+                    )}
+                  </div>
+                  {/* 요약 실패 에러 메시지 */}
+                  {isError && (
+                    <div className="mt-0.5 ml-[52px] flex items-center gap-2">
+                      <span className="text-[11px] text-red-500 dark:text-red-400">{resuState}</span>
+                      <button
+                        onClick={() => handleReSummarize(evt)}
+                        className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 underline"
+                      >
+                        재시도
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

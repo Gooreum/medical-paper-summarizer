@@ -59,10 +59,28 @@ class ClaudeCodeSummarizer(BaseSummarizer):
         return result.stdout
 
 
+def _keyword_relevance_score(title: str, abstract: str, topic: str) -> float:
+    """Fast 0-1 score using keyword phrase matching. No LLM call."""
+    from app.crawlers.topics import get_keywords
+    keywords = get_keywords(topic)
+    text = (title + " " + abstract).lower()
+    matches = sum(1 for kw in keywords if kw.lower() in text)
+    return matches / max(len(keywords), 1)
+
+
 def check_relevance(title: str, abstract: str, topic: str) -> bool:
     """Return True if paper is relevant to topic. Fails open on error."""
     if not abstract and not title:
         return True
+
+    # Fast path: keyword phrase matching (no LLM)
+    score = _keyword_relevance_score(title, abstract, topic)
+    if score >= 0.4:
+        return True   # at least 2 keyword phrases matched → clearly relevant
+    if score == 0.0:
+        return False  # zero phrase matches → clearly irrelevant
+
+    # Borderline (some but few matches): use Claude to decide
     text = f"Title: {title}\n\nAbstract: {abstract[:1500]}"
     prompt = (
         f"You are a strict medical paper relevance filter.\n\n"

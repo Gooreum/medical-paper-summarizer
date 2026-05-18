@@ -1,7 +1,8 @@
+import re
 from datetime import date as date_cls
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, defer
 
@@ -9,14 +10,27 @@ from app.crawlers.topics import TOPICS
 from app.crawlers.url_fetcher import fetch_from_url
 from app.database import get_db
 from app.models import Paper
-from app.schemas import PaperListResponse, PaperResponse
+from app.schemas import PaperListItem, PaperListResponse, PaperResponse
 from app.summarizers.claude_code import ClaudeCodeSummarizer
+
+
+def _extract_one_liner(summary: str | None) -> str | None:
+    if not summary:
+        return None
+    match = re.search(r'##\s*한 줄 핵심[^\n]*\n([\s\S]*?)(?=\n##|$)', summary)
+    raw = match.group(1) if match else summary
+    result = ' '.join(
+        line for line in raw.split('\n')
+        if not re.match(r'^-{3,}$', line.strip())
+    ).strip()[:120]
+    return result or None
 
 router = APIRouter()
 
 
 @router.get("/papers", response_model=PaperListResponse)
 def list_papers(
+    response: Response,
     topic: Optional[str] = None,
     date: Optional[str] = None,
     ids: Optional[str] = None,
@@ -26,6 +40,7 @@ def list_papers(
     sort: str = "crawled_date",
     db: Session = Depends(get_db),
 ):
+    response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=300"
     query = db.query(Paper).options(defer(Paper.full_text))
 
     if topic:
@@ -56,13 +71,19 @@ def list_papers(
     total = query.count()
     papers = query.offset(skip).limit(limit).all()
 
-    return PaperListResponse(papers=papers, total=total)
+    items = []
+    for p in papers:
+        item = PaperListItem.model_validate(p)
+        item.summary_one_liner = _extract_one_liner(p.summary_ko)
+        items.append(item)
+    return PaperListResponse(papers=items, total=total)
 
 
 class SummarizeUrlRequest(BaseModel):
     url: str
     topic: str
     model: Optional[str] = None
+    citation_count: Optional[int] = None
 
 
 class SummarizeTextRequest(BaseModel):
@@ -72,6 +93,7 @@ class SummarizeTextRequest(BaseModel):
     model: Optional[str] = None
     authors: Optional[str] = None
     url: Optional[str] = None
+    citation_count: Optional[int] = None
 
 
 # Must be defined BEFORE /papers/{paper_id} to avoid path conflict
@@ -113,7 +135,7 @@ def summarize_url(req: SummarizeUrlRequest, db: Session = Depends(get_db)):
         url=paper_data.get("url", req.url),
         full_text=paper_data["full_text"],
         summary_ko=summary,
-        citation_count=0,
+        citation_count=req.citation_count if req.citation_count is not None else paper_data.get("citation_count", 0),
         published_date=paper_data.get("published_date"),
         crawled_date=date_cls.today(),
         model_used=model_name,
@@ -154,7 +176,7 @@ def summarize_text(req: SummarizeTextRequest, db: Session = Depends(get_db)):
         url=req.url or "",
         full_text=req.text,
         summary_ko=summary,
-        citation_count=0,
+        citation_count=req.citation_count or 0,
         published_date=None,
         crawled_date=date_cls.today(),
         model_used=model_name,
@@ -170,7 +192,8 @@ def summarize_text(req: SummarizeTextRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/papers/{paper_id}", response_model=PaperResponse)
-def get_paper(paper_id: int, db: Session = Depends(get_db)):
+def get_paper(paper_id: int, response: Response, db: Session = Depends(get_db)):
+    response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
     paper = db.query(Paper).filter(Paper.id == paper_id).first()
     if not paper:
         raise HTTPException(status_code=404, detail="Paper not found")
@@ -188,7 +211,8 @@ def list_topics(db: Session = Depends(get_db)):
 
 
 @router.get("/sources/counts")
-def source_counts(db: Session = Depends(get_db)):
+def source_counts(response: Response, db: Session = Depends(get_db)):
+    response.headers["Cache-Control"] = "public, max-age=300, stale-while-revalidate=3600"
     from sqlalchemy import func
     rows = db.query(Paper.source, func.count(Paper.id)).group_by(Paper.source).all()
     counts = {source: count for source, count in rows if source}
@@ -197,7 +221,8 @@ def source_counts(db: Session = Depends(get_db)):
 
 
 @router.get("/topics/counts")
-def topic_counts(db: Session = Depends(get_db)):
+def topic_counts(response: Response, db: Session = Depends(get_db)):
+    response.headers["Cache-Control"] = "public, max-age=300, stale-while-revalidate=3600"
     from sqlalchemy import func
     rows = db.query(Paper.topic, func.count(Paper.id)).group_by(Paper.topic).all()
     counts = {topic: count for topic, count in rows if topic}

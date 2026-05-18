@@ -49,7 +49,8 @@ async def trigger_crawl(
     papers_per_topic = max(1, min(body.papers_per_topic or PAPERS_PER_TOPIC, 20))
     sources = body.sources if body.sources else ALL_SOURCES
     model = body.model or None
-    background_tasks.add_task(run_crawl_job, topics, db, papers_per_topic, sources, model)
+    min_citation_count = max(0, body.min_citation_count or 0)
+    background_tasks.add_task(run_crawl_job, topics, db, papers_per_topic, sources, model, min_citation_count)
     return {"status": "started", "topics": topics, "papers_per_topic": papers_per_topic, "sources": sources}
 
 
@@ -178,6 +179,8 @@ def get_crawl_history_detail(
                 "title": e.title,
                 "reason": e.reason,
                 "created_at": e.created_at.isoformat() if e.created_at else None,
+                "paper_id": e.paper_id,
+                "url": e.url,
             }
             for e in events
         ],
@@ -192,6 +195,7 @@ async def run_crawl_job(
     papers_per_topic: int = PAPERS_PER_TOPIC,
     sources: List[str] = None,
     model: str = None,
+    min_citation_count: int = 0,
 ) -> None:
     if sources is None:
         sources = ALL_SOURCES
@@ -280,6 +284,16 @@ async def run_crawl_job(
                     if paper_dict.get("arxiv_id") and paper_dict["arxiv_id"] in existing_biorxiv_ids:
                         continue
 
+                paper_source = (paper_dict.get("source") or "").lower()
+                is_preprint = paper_source in ("biorxiv", "medrxiv")
+                if min_citation_count > 0 and not is_preprint:
+                    paper_citation = paper_dict.get("citation_count") or 0
+                    if paper_citation < min_citation_count:
+                        _log(f"[{topic}] 인용수 미달 스킵: {paper_dict.get('title', '')[:40]} ({paper_citation}회 < {min_citation_count}회)")
+                        on_event({"type": "skipped", "title": paper_dict.get("title", ""), "source": paper_dict.get("source", ""), "reason": f"인용수 미달 ({paper_citation}회)", "url": paper_dict.get("url", "")})
+                        total_skipped += 1
+                        continue
+
                 title = paper_dict.get("title", "")
                 source = paper_dict.get("source", "").upper()
 
@@ -324,6 +338,8 @@ async def run_crawl_job(
                         "source": paper_dict.get("source", ""),
                         "title": title,
                         "reason": None,
+                        "paper_id": paper.id,
+                        "url": paper_dict.get("url", ""),
                     })
                     saved_count += 1
                     crawl_status["results"].append({"topic": topic, "title": title})
@@ -338,6 +354,7 @@ async def run_crawl_job(
                         "source": paper_dict.get("source", ""),
                         "title": title,
                         "reason": str(e)[:200],
+                        "url": paper_dict.get("url", ""),
                     })
                     continue
 
@@ -357,6 +374,8 @@ async def run_crawl_job(
                         source=evt.get("source", ""),
                         title=(evt.get("title", "") or "")[:300],
                         reason=evt.get("reason"),
+                        paper_id=evt.get("paper_id"),
+                        url=evt.get("url") or None,
                     ))
                 db_session.commit()
 

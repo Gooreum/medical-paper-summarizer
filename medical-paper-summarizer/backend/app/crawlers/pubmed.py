@@ -1,3 +1,6 @@
+import math
+import os
+import threading
 import time
 import xml.etree.ElementTree as ET
 from datetime import date
@@ -8,41 +11,107 @@ import requests
 
 from app.crawlers.scihub_resolver import SciHubResolver
 from app.crawlers.semantic_scholar import get_citation_count
-from app.crawlers.topics import MIN_CITATIONS, PAPERS_PER_TOPIC, TOPICS
+from app.crawlers.topics import MIN_CITATIONS, PAPERS_PER_TOPIC, build_pubmed_queries
 from app.summarizers.claude_code import check_relevance
 
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 PAGE_SIZE = 50
 _resolver = SciHubResolver()
 
+# NCBI allows 3 req/sec without API key, 10/sec with key
+_NCBI_API_KEY = os.getenv("NCBI_API_KEY", "")
+_RATE_INTERVAL = 0.12 if _NCBI_API_KEY else 0.4  # seconds between requests
+
+_pubmed_lock = threading.Lock()
+_pubmed_last_call = 0.0
+
+
+def _pubmed_get(url: str, params: dict) -> requests.Response:
+    """Thread-safe rate-limited GET with retry on 429."""
+    global _pubmed_last_call
+    if _NCBI_API_KEY:
+        params = {**params, "api_key": _NCBI_API_KEY}
+
+    for attempt in range(4):
+        with _pubmed_lock:
+            now = time.time()
+            wait = _RATE_INTERVAL - (now - _pubmed_last_call)
+            if wait > 0:
+                time.sleep(wait)
+            _pubmed_last_call = time.time()
+
+        r = requests.get(url, params=params, timeout=30)
+        if r.status_code == 429:
+            backoff = 2 ** attempt * 3  # 3s, 6s, 12s, 24s
+            time.sleep(backoff)
+            continue
+        r.raise_for_status()
+        return r
+
+    r.raise_for_status()
+    return r  # unreachable but satisfies type checker
+
+
+def _quality_score(paper: dict) -> int:
+    """Higher = better quality paper for prioritization."""
+    score = 0
+    text = (paper.get("title", "") + " " + paper.get("abstract", "")).lower()
+
+    # Study type signals in title/abstract
+    if "meta-analysis" in text or "systematic review" in text:
+        score += 30
+    elif "randomized" in text or "randomised" in text:
+        score += 15
+    elif "clinical trial" in text:
+        score += 10
+    elif "cohort" in text or "prospective" in text:
+        score += 5
+
+    # Full text available (not abstract-only)
+    if not paper.get("abstract_only", True):
+        score += 15
+
+    # Citation count (log scale, capped at 25)
+    citations = paper.get("citation_count", 0) or 0
+    if citations > 0:
+        score += min(int(math.log10(citations + 1) * 10), 25)
+
+    # Recency
+    pub_date = paper.get("published_date")
+    if pub_date:
+        try:
+            years_old = (date.today() - pub_date).days / 365
+            if years_old <= 2:
+                score += 15
+            elif years_old <= 5:
+                score += 8
+        except Exception:
+            pass
+
+    return score
+
 
 def _esearch(query: str, retstart: int = 0, retmax: int = PAGE_SIZE) -> List[str]:
-    r = requests.get(
+    r = _pubmed_get(
         f"{EUTILS}/esearch.fcgi",
-        params={"db": "pubmed", "term": query, "retstart": retstart, "retmax": retmax, "retmode": "json"},
-        timeout=20,
+        {"db": "pubmed", "term": query, "retstart": retstart, "retmax": retmax, "retmode": "json"},
     )
-    r.raise_for_status()
     return r.json().get("esearchresult", {}).get("idlist", [])
 
 
 def _efetch_pubmed_xml(pmid: str) -> ET.Element:
-    r = requests.get(
+    r = _pubmed_get(
         f"{EUTILS}/efetch.fcgi",
-        params={"db": "pubmed", "id": pmid, "rettype": "xml", "retmode": "xml"},
-        timeout=30,
+        {"db": "pubmed", "id": pmid, "rettype": "xml", "retmode": "xml"},
     )
-    r.raise_for_status()
     return ET.fromstring(r.content)
 
 
 def _efetch_pmc_text(pmc_id: str) -> str:
-    r = requests.get(
+    r = _pubmed_get(
         f"{EUTILS}/efetch.fcgi",
-        params={"db": "pmc", "id": pmc_id, "rettype": "full", "retmode": "xml"},
-        timeout=30,
+        {"db": "pmc", "id": pmc_id, "rettype": "full", "retmode": "xml"},
     )
-    r.raise_for_status()
     return r.text
 
 
@@ -63,20 +132,22 @@ class PubMedCrawler:
             if on_event:
                 on_event(evt)
 
-        keywords = TOPICS.get(topic, [topic])
+        # Collect up to 3x requested papers across all query tiers, then quality-sort
+        MAX_COLLECT = max_papers * 3
+        queries = build_pubmed_queries(topic)
         papers: List[Dict] = []
         seen_pmids: Set[str] = set()
 
-        for kw in keywords:
-            if len(papers) >= max_papers:
+        for query in queries:
+            if len(papers) >= MAX_COLLECT:
                 break
             page = 0
-            query = f'"{kw}"[Title/Abstract] AND (Clinical Trial[pt] OR Randomized Controlled Trial[pt])'
-            while len(papers) < max_papers:
+            log(f"[PubMed] 쿼리: {query[:80]}...")
+            while len(papers) < MAX_COLLECT:
                 try:
                     ids = _esearch(query, retstart=page * PAGE_SIZE)
                 except Exception as e:
-                    log(f"[PubMed] '{kw}' 검색 실패 (스킵): {e}")
+                    log(f"[PubMed] 검색 실패 (스킵): {e}")
                     break
                 if not ids:
                     break
@@ -87,7 +158,6 @@ class PubMedCrawler:
                     try:
                         log(f"[PubMed] PMID {pmid} 가져오는 중...")
                         root = _efetch_pubmed_xml(pmid)
-                        time.sleep(0.35)
 
                         art_node = root.find(".//Article")
                         if art_node is None:
@@ -111,16 +181,17 @@ class PubMedCrawler:
                             continue
 
                         # 2) 관련도 체크 (PDF 전에)
+                        _pmid_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
                         if not check_relevance(title, abstract, topic):
                             log(f"[PubMed] 관련도 낮음 스킵: {title[:50]}")
-                            emit({"type": "skipped", "source": "pubmed", "title": title, "reason": "관련도 낮음"})
+                            emit({"type": "skipped", "source": "pubmed", "title": title, "reason": "관련도 낮음", "url": _pmid_url})
                             continue
 
                         # 3) 인용수 체크 (PDF 전에)
                         citations = get_citation_count(doi or title)
                         if citations < MIN_CITATIONS:
                             log(f"[PubMed] 스킵 (인용수 {citations} < {MIN_CITATIONS}): {title[:40]}")
-                            emit({"type": "skipped", "source": "pubmed", "title": title, "reason": f"인용수 부족 ({citations}회)"})
+                            emit({"type": "skipped", "source": "pubmed", "title": title, "reason": f"인용수 부족 ({citations}회)", "url": _pmid_url})
                             continue
 
                         # 4) PDF 다운로드 — 여기까지 통과한 논문만
@@ -152,7 +223,6 @@ class PubMedCrawler:
                                 pmc_text = _efetch_pmc_text(pmc_id)
                                 if len(pmc_text) > 500:
                                     full_text = pmc_text
-                                time.sleep(0.35)
                             except Exception:
                                 pass
                         if not full_text and doi:
@@ -172,11 +242,11 @@ class PubMedCrawler:
                                 log(f"[PubMed] 초록만 사용: {title[:50]}")
                             else:
                                 log(f"[PubMed] 텍스트 없음, 스킵: {title[:50]}")
-                                emit({"type": "skipped", "source": "pubmed", "title": title, "reason": "텍스트 없음"})
+                                emit({"type": "skipped", "source": "pubmed", "title": title, "reason": "텍스트 없음", "url": _pmid_url})
                                 continue
 
                         log(f"[PubMed] 수집 완료 (인용수 {citations}){' [초록]' if abstract_only else ''}: {title[:50]}")
-                        emit({"type": "collected", "source": "pubmed", "title": title, "reason": f"인용 {citations}회" + (" [초록]" if abstract_only else "")})
+                        emit({"type": "collected", "source": "pubmed", "title": title, "reason": f"인용 {citations}회" + (" [초록]" if abstract_only else ""), "url": _pmid_url})
                         papers.append({
                             "doi": doi,
                             "arxiv_id": None,
@@ -192,15 +262,16 @@ class PubMedCrawler:
                             "abstract": abstract,
                             "abstract_only": abstract_only,
                         })
-                        if len(papers) >= max_papers:
+                        if len(papers) >= MAX_COLLECT:
                             break
                     except Exception as e:
                         log(f"[PubMed] PMID {pmid} 실패 (스킵): {e}")
                         continue
                 else:
                     page += 1
-                    time.sleep(0.35)
                     continue
                 break
 
-        return papers
+        # Quality-sort and return top N
+        papers.sort(key=_quality_score, reverse=True)
+        return papers[:max_papers]

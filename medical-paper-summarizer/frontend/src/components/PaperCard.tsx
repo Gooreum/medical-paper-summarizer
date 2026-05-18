@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import type { Paper } from '@/src/lib/api';
 
@@ -27,6 +30,7 @@ function formatAuthors(authors: string): string {
 }
 
 export default function PaperCard({ paper, isBookmarked = false, onToggleBookmark }: Props) {
+  const [navigating, setNavigating] = useState(false);
   const src = (paper.source || '').toLowerCase();
   const sourceBadgeColor =
     src === 'pubmed'
@@ -37,11 +41,16 @@ export default function PaperCard({ paper, isBookmarked = false, onToggleBookmar
     : src === 'medrxiv' ? 'medRxiv'
     : src === 'biorxiv' ? 'bioRxiv'
     : paper.source;
-  const preview = extractOneLiner(paper.summary_ko);
+  const preview = paper.summary_one_liner ?? extractOneLiner(paper.summary_ko);
 
   return (
     <div className="group relative bg-white dark:bg-gray-800 rounded-2xl p-4 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700 transition-colors">
-      <Link href={`/papers/${paper.id}`} className="absolute inset-0 rounded-2xl" aria-label={paper.title} />
+      <Link href={`/papers/${paper.id}`} className="absolute inset-0 rounded-2xl" aria-label={paper.title} onClick={() => setNavigating(true)} />
+      {navigating && (
+        <div className="absolute inset-0 rounded-2xl z-20 bg-white/70 dark:bg-gray-800/70 flex items-center justify-center pointer-events-none">
+          <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
 
       {/* 배지 + 북마크 */}
       <div className="relative z-10 flex items-center justify-between mb-2.5">

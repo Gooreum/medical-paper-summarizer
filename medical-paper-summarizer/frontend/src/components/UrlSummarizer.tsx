@@ -34,6 +34,9 @@ export default function UrlSummarizer() {
   const [paperUrl, setPaperUrl] = useState('');
   const [text, setText] = useState('');
 
+  // Common
+  const [citationCount, setCitationCount] = useState<number>(0);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -44,10 +47,10 @@ export default function UrlSummarizer() {
       let paper;
       if (mode === 'url') {
         if (!url.trim()) return;
-        paper = await summarizeUrl(url.trim(), topic, model);
+        paper = await summarizeUrl(url.trim(), topic, model, citationCount || undefined);
       } else {
         if (!title.trim() || !text.trim()) return;
-        paper = await summarizeText(title.trim(), text.trim(), topic, model, authors.trim() || undefined, paperUrl.trim() || undefined);
+        paper = await summarizeText(title.trim(), text.trim(), topic, model, authors.trim() || undefined, paperUrl.trim() || undefined, citationCount || undefined);
       }
       setResult({ id: paper.id, title: paper.title });
       if (mode === 'url') setUrl('');
@@ -168,6 +171,17 @@ export default function UrlSummarizer() {
             >
               {MODELS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">인용수 (선택)</label>
+            <input
+              type="number"
+              min={0}
+              value={citationCount}
+              onChange={(e) => setCitationCount(Math.max(0, Number(e.target.value)))}
+              disabled={loading}
+              className="w-24 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 disabled:opacity-50"
+            />
           </div>
         </div>
 
